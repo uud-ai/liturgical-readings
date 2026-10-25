@@ -185,4 +185,5 @@ python -m unittest discover tests   # проверки
 1. Перенос воскресных Евангелий в январе (Крещенская отступка), паремии
    вечерни святым, другие святые по Минее.
 
-Автодеплой: GitHub → Vercel (веб-интерфейс — `app.py`).
+Автодеплой: GitHub → Vercel (веб-интерфейс — `app.py`): https://liturgical-readings.vercel.app.
+Сервер работает во Франкфурте (`fra1`, задано в `vercel.json`), Python 3.12 (`.python-version`).
