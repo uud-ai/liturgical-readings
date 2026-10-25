@@ -69,9 +69,57 @@ class CycleTest(unittest.TestCase):
         self.assertEqual((p.apostle.week, p.gospel.week), ("32", "32"))
         p = self.pos(2025, 1, 22)
         self.assertEqual((p.apostle.week, p.gospel.week), ("31", "31"))
-        # Воскресенья между Богоявлением и Закхеем (перенос Евангелий) не реализованы.
-        self.assertTrue(self.pos(2027, 1, 31).unresolved)
         self.assertFalse(self.pos(2027, 2, 14).unresolved)
+
+    def test_christmas_period(self):
+        # Год с Воздвиженской отступкой: с субботы пред Рождеством Апостол — по
+        # седмице Евангелия (azbyka.ru/days: 01.01, 03.01, 10.01.2011; 02.01, 04.01,
+        # 05.01, 11.01–13.01, 15.01, 16.01.2016).
+        cases = {
+            (2010, 12, 27): ("32", "30"), (2011, 1, 1): ("30", "30"),
+            (2011, 1, 3): ("31", "31"), (2011, 1, 10): ("32", "32"),
+            (2015, 12, 31): ("31", "30"), (2016, 1, 2): ("30", "30"),
+            (2016, 1, 4): ("31", "31"), (2016, 1, 13): ("32", "32"),
+            (2016, 1, 16): ("32", "32"),
+            # Ранняя Пасха: седмицы исчерпаны — читается 33-я (azbyka.ru 15–17.01.2018).
+            (2018, 1, 15): ("33", "33"), (2018, 1, 17): ("33", "33"),
+        }
+        for (y, m, d), weeks in cases.items():
+            p = self.pos(y, m, d)
+            self.assertFalse(p.unresolved, (y, m, d))
+            self.assertEqual((p.apostle.week, p.gospel.week), weeks, (y, m, d))
+        # Недели святых отец, по Рождестве, пред Богоявлением — без рядовых.
+        for y, m, d in ((2016, 1, 3), (2016, 1, 10), (2016, 1, 17), (2026, 1, 18)):
+            self.assertTrue(self.pos(y, m, d).ordinary_omitted, (y, m, d))
+        t = get_reading(date(2016, 1, 13)).format()
+        self.assertIn("Мк.11:23-26", t)
+
+    def test_theophany_gap_sundays(self):
+        # Крещенская отступка: воскресенья между Неделей по Богоявлении и Закхеем
+        # заполняются назад от Закхея (azbyka.ru/days, сверено 25.10.2026).
+        cases = {
+            (2024, 1, 28): "30", (2024, 2, 4): "31", (2024, 2, 11): "17",  # три воскресенья
+            (2013, 1, 27): "30", (2013, 2, 10): "17",
+            (2019, 1, 27): "30", (2019, 2, 3): "31",                       # два
+            (2021, 1, 31): "30", (2016, 1, 31): "30",
+            (2022, 1, 30): "31",                                           # одно
+            (2025, 1, 26): "31",              # Неделя по Богоявлении, под зачало
+        }
+        for (y, m, d), week in cases.items():
+            p = self.pos(y, m, d)
+            self.assertFalse(p.unresolved, (y, m, d))
+            self.assertEqual((p.apostle.week, p.gospel.week, p.gospel.weekday),
+                             (week, week, "sun"), (y, m, d))
+        # Если пропущенные воскресенья есть, в Неделю по Богоявлении рядовых нет.
+        for y, m, d in ((2024, 1, 21), (2022, 1, 23)):
+            p = self.pos(y, m, d)
+            self.assertTrue(p.ordinary_omitted, (y, m, d))
+            t = get_reading(date(y, m, d)).format()
+            self.assertIn("Мф.4:12-17", t)
+            self.assertNotIn("рядовое (под зачало)", t)
+        t = get_reading(date(2024, 2, 18)).format()
+        self.assertIn("Неделя 37-я по Пятидесятнице", t)     # как на azbyka.ru
+        self.assertIn("Лк.19:1-10", t)
 
     def test_zacchaeus(self):
         p = self.pos(2027, 2, 14)

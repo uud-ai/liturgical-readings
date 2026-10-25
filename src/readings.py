@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 from functools import lru_cache
@@ -101,7 +102,7 @@ class Reading:
                 self.notes.insert(0, entry["note"])
         else:
             self.title, self.note = self._title_and_note()
-            self.items = [] if pos.unresolved else self._items()
+            self.items = [] if pos.unresolved or pos.ordinary_omitted else self._items()
         self.feast_kind = ""
         self._apply_fixed_feasts()
 
@@ -130,6 +131,11 @@ class Reading:
             return title, ""
         same_slot = self.pos.apostle == self.pos.gospel
         note = self.apostle_entry.get("note", "") if same_slot else ""
+        m = re.match(r"Неделя (\d+)-я по Пятидесятнице(?:, )?(.*)", note)
+        if m and self.pos.sunday_after_pentecost not in (None, int(m.group(1))):
+            # Чтения другой Недели (обратный счёт, Крещенская отступка):
+            # название — по счёту от Пятидесятницы, тема — из чтений.
+            return title, m.group(2)
         if note.startswith(("Неделя", "Светлое", "День Святой")):
             return note, ""
         return title, note
@@ -276,6 +282,8 @@ class Reading:
         notes = []
         if sp["ordinary"] == "omit":
             notes.append("Рядовые чтения в эту Неделю не читаются.")
+        elif self.pos.ordinary_omitted:
+            notes += self.pos.notes
         else:
             ordinary = [] if self.unresolved else [
                 i for i in self.items if i.service == "Литургия" and (i.ref or i.parts)]

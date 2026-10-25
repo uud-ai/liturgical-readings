@@ -1123,7 +1123,7 @@
       "wed": {
         "apostle": "Еф.3:8-21",
         "apostle_zachalo": 223,
-        "gospel": "Мк.11:22-26",
+        "gospel": "Мк.11:23-26",
         "gospel_zachalo": 51,
         "source": "Ponomar + orthocal (сверено по номеру зачала)"
       },
@@ -1152,7 +1152,8 @@
         "apostle": "2Кор.6:16-7:1",
         "gospel": "Мф.15:21-28",
         "note": "Неделя 17-я по Пятидесятнице, о хананеянке",
-        "gospel_zachalo": 62
+        "gospel_zachalo": 62,
+        "apostle_zachalo": "182 от полу"
       }
     },
     "18": {
@@ -1898,7 +1899,7 @@
       "wed": {
         "apostle": "Иак.3:11-4:6",
         "apostle_zachalo": 55,
-        "gospel": "Мк.11:22-26",
+        "gospel": "Мк.11:23-26",
         "gospel_zachalo": 51,
         "source": "Ponomar + orthocal (сверено по номеру зачала)"
       },
