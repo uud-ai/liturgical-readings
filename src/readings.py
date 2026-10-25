@@ -8,6 +8,7 @@ from datetime import date, timedelta
 from functools import lru_cache
 
 from src.cycle import DATA_DIR, DayPosition, Slot, eothinon, resolve
+from src.bible_text import passage_text
 from src.links import bible_url, day_url
 
 
@@ -477,7 +478,7 @@ class Reading:
         self.notes = notes
         self.unresolved = False
 
-    def format(self) -> str:
+    def format(self, with_text: bool = False) -> str:
         lines = [f"Чтения на {self.day.strftime('%d.%m.%Y')}"]
         if not self.unresolved:
             lines.append(self.title)
@@ -485,7 +486,14 @@ class Reading:
                 lines.append(self.note)
         # В тексте порядок привычный: Апостол, Евангелие, затем утреннее.
         order = {"apostle": 0, "gospel": 1, "matins": 2, "vespers": 3, "triodion": 4, "feast": 4}
-        lines += [i.text() for i in sorted(self.items, key=lambda i: order[i.kind])]
+        for i in sorted(self.items, key=lambda i: order[i.kind]):
+            lines.append(i.text())
+            if with_text:
+                for ref in [i.ref] if i.ref else [p.ref for p in i.parts]:
+                    try:
+                        lines.append("    " + passage_text(ref))
+                    except ValueError as exc:
+                        lines.append(f"    (текст недоступен: {exc})")
         lines += list(dict.fromkeys(self.notes))     # без повторов
         return "\n".join(lines)
 

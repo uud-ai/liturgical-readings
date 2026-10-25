@@ -1,10 +1,30 @@
 from datetime import date, timedelta
 
 from flask import Flask, render_template_string, request
+from markupsafe import Markup, escape
 
+from src.bible_text import RefError, passage
 from src.readings import get_reading
 
 app = Flask(__name__)
+
+
+def passage_html(ref: str):
+    """Текст чтения в HTML: номера стихов и курсив Синодального перевода."""
+    try:
+        verses = passage(ref)
+    except (RefError, ValueError):
+        return None
+    out, prev = [], None
+    for v in verses:
+        num = f"{v.chapter}:{v.verse}" if v.chapter != prev else str(v.verse)
+        text = str(escape(v.text)).replace("&lt;i&gt;", "<i>").replace("&lt;/i&gt;", "</i>")
+        out.append(f"<sup>{num}</sup>{text}")
+        prev = v.chapter
+    return Markup(" ".join(out))
+
+
+app.jinja_env.globals["passage_html"] = passage_html
 
 MONTHS = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля",
           "августа", "сентября", "октября", "ноября", "декабря"]
@@ -83,6 +103,18 @@ PAGE = """<!doctype html>
           color: inherit; text-decoration: none; margin-top: 4px; }
   .part .ref { font-size: 19px; }
   .part:hover .ref { color: var(--accent); }
+  details.reading > summary, details.part > summary { list-style: none; cursor: pointer; }
+  details > summary::-webkit-details-marker { display: none; }
+  .chev { display: inline-block; color: var(--accent); font-size: 16px; transition: transform .15s; }
+  details[open] > summary .chev { transform: rotate(90deg); }
+  details.part { margin-top: 6px; }
+  details.part > summary { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .text { font: 18px/1.65 "PT Serif", Georgia, serif; margin: 12px 0 8px; }
+  .text sup { color: var(--accent); font: 700 11px "PT Sans", sans-serif; margin: 0 3px 0 6px; }
+  .text sup:first-child { margin-left: 0; }
+  .ext { font-size: 14px; color: var(--accent); }
+  .toggle-all { margin: 0 0 12px; font: inherit; font-size: 14px; color: var(--accent);
+                background: none; border: 0; padding: 0; cursor: pointer; }
   footer { margin-top: 28px; font-size: 14px; color: var(--muted); }
   footer a { color: var(--accent); }
   @media (max-width: 480px) {
@@ -112,6 +144,14 @@ PAGE = """<!doctype html>
     <h1>{{ r.title }}</h1>
     {% if r.note %}<p class="subtitle">{{ r.note }}</p>{% else %}<div style="height:12px"></div>{% endif %}
 
+    {% macro body(ref, url) %}
+      {% set t = passage_html(ref) %}
+      {% if t %}<div class="text">{{ t }}</div>{% endif %}
+      {% if url %}<a class="ext" href="{{ url }}" target="_blank" rel="noopener">Открыть на «Азбуке веры» ↗</a>{% endif %}
+    {% endmacro %}
+    {% if r.items %}<button class="toggle-all" type="button" onclick="
+      var d=document.querySelectorAll('details'), open=![].every.call(d,function(x){return x.open});
+      d.forEach(function(x){x.open=open}); this.textContent=open?'Свернуть все тексты':'Раскрыть все тексты';">Раскрыть все тексты</button>{% endif %}
     <div class="card">
       {% for service, items in r.groups %}
         {% if service %}<div class="service">{{ service }}</div>{% endif %}
@@ -120,23 +160,26 @@ PAGE = """<!doctype html>
           <div class="reading">
             <div class="label">{{ i.label }}</div>
             {% for p in i.parts %}
-            <a class="part" href="{{ p.url }}" target="_blank" rel="noopener">
-              <span class="ref">{{ p.ref }} <span class="go">↗</span></span>
-              {% if p.zachalo %}<span class="zach">зач. {{ p.zachalo }}</span>{% endif %}
-            </a>
+            <details class="part">
+              <summary><span class="ref">{{ p.ref }} <span class="chev">›</span></span>
+                {% if p.zachalo %}<span class="zach">зач. {{ p.zachalo }}</span>{% endif %}</summary>
+              {{ body(p.ref, p.url) }}
+            </details>
             {% endfor %}
           </div>
-          {% elif i.url %}
-          <a class="reading" href="{{ i.url }}" target="_blank" rel="noopener">
-            <div class="label">{{ i.label }}</div>
-            <div class="ref">{{ i.ref }} <span class="go">↗</span></div>
-            {% if i.zachalo %}<div class="zach">зачало {{ i.zachalo }}</div>{% endif %}
-          </a>
+          {% elif i.ref %}
+          <details class="reading">
+            <summary>
+              <div class="label">{{ i.label }}</div>
+              <div class="ref">{{ i.ref }} <span class="chev">›</span></div>
+              {% if i.zachalo %}<div class="zach">зачало {{ i.zachalo }}</div>{% endif %}
+            </summary>
+            {{ body(i.ref, i.url) }}
+          </details>
           {% else %}
           <div class="reading">
             <div class="label">{{ i.label }}</div>
-            {% if i.ref %}<div class="ref">{{ i.ref }}</div>
-            {% else %}<div class="missing">{{ i.missing }}</div>{% endif %}
+            <div class="missing">{{ i.missing }}</div>
           </div>
           {% endif %}
         {% endfor %}
@@ -150,9 +193,8 @@ PAGE = """<!doctype html>
     {% endif %}
 
     <footer>
-      Показаны рядовые чтения, Триодь постная и двунадесятые праздники (без чтений святых по Минее).
-      Все чтения дня — <a href="{{ r.azbyka_day_url }}" target="_blank" rel="noopener">на «Азбуке веры»</a>.
-      Ссылки открывают Синодальный перевод.
+      Рядовые чтения, Триодь постная, праздники и чтимые святые. Текст — Синодальный перевод
+      (цифровое издание проекта Ponomar). Все чтения дня — <a href="{{ r.azbyka_day_url }}" target="_blank" rel="noopener">на «Азбуке веры»</a>.
     </footer>
   {% endif %}
 </main>
