@@ -8,6 +8,7 @@ import unittest
 from datetime import date
 
 from src.cycle import computed_pascha, eothinon, resolve
+from src.links import bible_url
 from src.readings import get_reading
 
 
@@ -86,6 +87,19 @@ class ReadingTest(unittest.TestCase):
         text = get_reading(date(2026, 4, 26)).format()
         self.assertIn("Евангелие: Мк.15:43-16:8 (зач. 69)", text)
         self.assertIn("Евангелие утреннее: Мк.16:9-20 (зач. 71)", text)
+
+    def test_bible_links(self):
+        # Коды книг — как на страницах azbyka.ru/biblia.
+        self.assertEqual(bible_url("Иак.2:14-26"), "https://azbyka.ru/biblia/?Jac.2:14-26")
+        self.assertEqual(bible_url("Евр.7:26-8:2"), "https://azbyka.ru/biblia/?Hebr.7:26-8:2")
+        self.assertEqual(bible_url("Флп.1:1-7"), "https://azbyka.ru/biblia/?Phil.1:1-7")
+
+    def test_full_ordinary_cycle(self):
+        # В реализованных периодах нет дней без данных.
+        d = date(2026, 1, 1)
+        while d < date(2036, 1, 1):
+            self.assertNotIn("ещё не внесено", get_reading(d).format(), d)
+            d = date.fromordinal(d.toordinal() + 1)
 
     def test_every_day_formats(self):
         d = date(2026, 1, 1)

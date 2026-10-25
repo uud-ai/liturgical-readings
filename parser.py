@@ -10,23 +10,16 @@ import requests
 from bs4 import BeautifulSoup
 from pathlib import Path
 
-BOOK_MAP = {
-    "Мф": "Mt", "Мк": "Mk", "Лк": "Lk", "Ин": "Jn",
-    "Деян": "Act", "Иак": "Jas", "1Пет": "1Pe", "2Пет": "2Pe",
-    "1Ин": "1Jn", "2Ин": "2Jn", "3Ин": "3Jn", "Иуд": "Jude",
-    "Рим": "Rom", "1Кор": "1Co", "2Кор": "2Co", "Гал": "Gal",
-    "Еф": "Eph", "Флп": "Php", "Кол": "Col", "1Фес": "1Th",
-    "2Фес": "2Th", "1Тим": "1Ti", "2Тим": "2Ti", "Тит": "Tit",
-    "Флм": "Phm", "Евр": "Heb"
-}
+from src.links import AZBYKA_BOOKS as BOOK_MAP  # проверенные коды книг azbyka.ru
 
 def parse_reference_to_azbyka_format(ref_str):
     # Убираем пробелы и заменяем все виды длинных тире на обычный дефис
     ref_str = ref_str.replace("–", "-").replace("—", "-").replace(" ", "")
-    for rus, eng in BOOK_MAP.items():
+    # длинные сокращения проверяем первыми, чтобы «1Ин» не спутать с «Ин»
+    for rus, eng in sorted(BOOK_MAP.items(), key=lambda kv: -len(kv[0])):
         if ref_str.startswith(rus):
             # Заменяем только само сокращение, оставляя точку на месте
-            clean_ref = ref_str.replace(rus, eng)
+            clean_ref = eng + ref_str[len(rus):]
             return clean_ref
     return None
 
@@ -36,7 +29,7 @@ def fetch_synodal_text(reference_str):
         print(f"[!] Не удалось распознать книгу: {reference_str}")
         return ""
 
-    url = f"https://azbyka.ru/biblia/?{azbyka_ref}&r"
+    url = f"https://azbyka.ru/biblia/?{azbyka_ref}"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
