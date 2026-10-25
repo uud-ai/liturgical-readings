@@ -108,12 +108,57 @@ class ReadingTest(unittest.TestCase):
         self.assertIn("Евангелие Страстей 12-е: Мф.27:62-66 (зач. 114)", t)
         self.assertIn("Мф.27:55-61", t)
 
+    def test_fixed_feasts(self):
+        # Эталон — azbyka.ru/biblia/days (сверено 25.10.2026).
+        t = get_reading(date(2026, 9, 21)).format()  # Рождество Богородицы, будни
+        self.assertIn("Рождество Пресвятой Богородицы", t)
+        self.assertIn("Литургия. Апостол: Флп.2:5-11 (зач. 240)", t)
+        self.assertNotIn("Недели", t)
+        t = get_reading(date(2025, 9, 21)).format()  # то же в воскресенье
+        self.assertIn("Апостол Недели: 2Кор.4:6-15 (зач. 176)", t)
+        self.assertIn("Евангелие Богородицы: Лк.10:38-42,11:27-28 (зач. 54)", t)
+        self.assertNotIn("воскресное", t)
+        t = get_reading(date(2026, 9, 27)).format()  # Воздвижение в воскресенье
+        self.assertIn("Ин.19:6-11,13-20,25-28,30-35 (зач. 60)", t)
+        self.assertNotIn("Недели", t)
+        t = get_reading(date(2026, 2, 15)).format()  # Сретение в Неделю мясопустную
+        self.assertIn("Апостол Недели: 1Кор.8:8-9:2 (зач. 140)", t)
+        self.assertIn("Евангелие праздника: Лк.2:22-40 (зач. 7)", t)
+        t = get_reading(date(2026, 4, 7)).format()   # Благовещение в Великий Вторник
+        self.assertIn("Евангелие Благовещения: Лк.1:24-38 (зач. 3)", t)
+        self.assertIn("Мф.24:36-26:2", t)
+        self.assertNotIn("Мф.22:15-23:39", t)            # утреня — Благовещения
+
+    def test_eves(self):
+        t = get_reading(date(2026, 1, 16)).format()  # Царские часы в пятницу
+        self.assertIn("9-й час. Апостол: Тит.2:11-14,3:4-7 (зач. 302)", t)
+        t = get_reading(date(2026, 1, 18)).format()  # навечерие в воскресенье
+        self.assertIn("Евангелие 10-е воскресное: Ин.21:1-14 (зач. 66)", t)
+        self.assertIn("Апостол Недели пред Богоявлением: 2Тим.4:5-8 (зач. 298)", t)
+        self.assertIn("Евангелие: Лк.3:1-18 (зач. 9)", t)
+        t = get_reading(date(2025, 1, 18)).format()  # навечерие в субботу
+        self.assertIn("1Тим.3:14-4:5 (зач. 284)", t)
+        t = get_reading(date(2027, 1, 6)).format()   # навечерие Рождества в среду
+        self.assertIn("1-й час. Евангелие: Мф.1:18-25 (зач. 2)", t)
+        self.assertIn("Вечерня с Литургией свт. Василия Великого. Евангелие: Лк.2:1-20 (зач. 5)", t)
+
     def test_bible_links(self):
         # Коды книг — как на страницах azbyka.ru/biblia.
         self.assertEqual(bible_url("Иак.2:14-26"), "https://azbyka.ru/biblia/?Jac.2:14-26")
         self.assertEqual(bible_url("Евр.7:26-8:2"), "https://azbyka.ru/biblia/?Hebr.7:26-8:2")
         self.assertEqual(bible_url("Флп.1:1-7"), "https://azbyka.ru/biblia/?Phil.1:1-7")
         self.assertEqual(bible_url("3Цар.17:8-24"), "https://azbyka.ru/biblia/?1King.17:8-24")
+
+    def test_feasts_links(self):
+        from src.readings import load_feasts
+        d = load_feasts()
+        lists = [f["readings"] for f in d["feasts"].values()]
+        lists += [v for e in d["eves"].values() for v in e.values() if isinstance(v, list)]
+        for lst in lists:
+            for r in lst:
+                for ref in [r.get("ref")] + [p["ref"] for p in r.get("parts", [])]:
+                    if ref:
+                        self.assertIsNotNone(bible_url(ref), ref)
 
     def test_triodion_table_complete(self):
         from src.readings import load_triodion

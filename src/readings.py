@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, timedelta
 from functools import lru_cache
 
 from src.cycle import DATA_DIR, DayPosition, Slot, eothinon, resolve
@@ -14,6 +14,12 @@ from src.links import bible_url, day_url
 @lru_cache(maxsize=1)
 def load_ordinary_cycle() -> dict:
     with open(DATA_DIR / "ordinary_cycle.json", encoding="utf-8") as f:
+        return json.load(f)
+
+
+@lru_cache(maxsize=1)
+def load_feasts() -> dict:
+    with open(DATA_DIR / "feasts.json", encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -53,7 +59,7 @@ class Part:
 @dataclass
 class Item:
     """Одно чтение дня."""
-    kind: str          # apostle | gospel | matins | vespers | triodion
+    kind: str          # apostle | gospel | matins | vespers | triodion | feast
     label: str         # «Апостол», «Евангелие», «Паремия 1-я», …
     ref: str = ""      # «Лк.7:11-16»; пусто, если чтение не внесено
     zachalo: str = ""  # «30», «130 от полу»
@@ -66,7 +72,8 @@ class Item:
         return bible_url(self.ref) if self.ref else None
 
     def text(self) -> str:
-        label = f"{self.service}. {self.label}" if self.kind == "triodion" else self.label
+        label = (f"{self.service}. {self.label}" if self.kind in ("triodion", "feast")
+                 else self.label)
         if self.parts:
             return f"{label}: " + "; ".join(p.text() for p in self.parts)
         if not self.ref:
@@ -82,6 +89,7 @@ class Reading:
         self.apostle_entry = lookup(pos.apostle) or {}
         self.gospel_entry = lookup(pos.gospel) or {}
         self.notes = [pos.unresolved] if pos.unresolved else list(pos.notes)
+        self.unresolved = bool(pos.unresolved)
         if pos.triodion_day:
             entry = load_triodion()[str(pos.triodion_day)]
             self.title, self.note = entry["title"], ""
@@ -91,6 +99,8 @@ class Reading:
         else:
             self.title, self.note = self._title_and_note()
             self.items = [] if pos.unresolved else self._items()
+        self.feast_kind = ""
+        self._apply_fixed_feasts()
 
     @property
     def found(self) -> bool:
@@ -166,14 +176,151 @@ class Reading:
                 parts=[Part(p["ref"], str(p.get("zachalo", ""))) for p in r.get("parts", [])]))
         return items
 
+    # --- неподвижные двунадесятые праздники и навечерия -----------------
+
+    def _apply_fixed_feasts(self) -> None:
+        data = load_feasts()
+        old = self.day - timedelta(days=13)          # старый стиль (1900–2099)
+        key = f"{old.month:02d}-{old.day:02d}"
+        wd = self.day.weekday()                       # 0 — понедельник, 6 — воскресенье
+
+        # Царские часы, перенесённые на пятницу, если навечерие — в субботу/воскресенье.
+        if wd == 4:
+            for delta in (1, 2):
+                o = old + timedelta(days=delta)
+                eve = data["eves"].get(f"{o.month:02d}-{o.day:02d}")
+                if eve:
+                    self._replace(eve["title"].split(" (")[0] + ": Царские часы",
+                                  eve["royal_hours"],
+                                  ["Царские часы перенесены на пятницу, так как навечерие "
+                                   "приходится на " + ("субботу." if delta == 1 else "воскресенье."),
+                                   "Литургия в этот день не совершается."])
+                    return
+
+        if key in data["eves"]:
+            eve = data["eves"][key]
+            if wd <= 4:
+                self._replace(eve["title"], eve["weekday"],
+                              ["Рядовые чтения в этот день не читаются."])
+            else:
+                friday = self.day - timedelta(days=wd - 4)
+                items = list(eve["saturday" if wd == 5 else "sunday"]) + eve["weekend_vespers"]
+                notes = [f"Царские часы перенесены на пятницу, {friday.strftime('%d.%m')}."]
+                if wd == 5:
+                    notes.append(eve["saturday_note"])
+                self._replace(eve["title"], items, notes, keep_eothinon=(wd == 6))
+            return
+
+        feast = data["feasts"].get(key)
+        if not feast:
+            return
+        self.feast_kind = feast["kind"]
+        base_title = "" if self.unresolved else (self.pos.title or self.title)
+        if feast["kind"] == "lord":
+            notes = ["Господский двунадесятый праздник: " + (
+                "воскресные и рядовые чтения" if wd == 6 else "рядовые чтения") +
+                " в этот день не читаются."]
+            if key == "02-02" and self.pos.triodion_day == 48:
+                notes.append("Сретение в Чистый понедельник по уставу переносится на "
+                             "Неделю сыропустную — смотрите богослужебные указания.")
+            if self.pos.triodion_day and wd == 6:
+                # Недели Триоди не уступают празднику: на литургии — Недели и праздника.
+                self._feast_with_sunday(feast, base_title, "праздника", [
+                    "Господский праздник в Неделю Триоди: утреннее Евангелие — праздника; "
+                    "на литургии читаются чтения Недели и праздника."])
+                return
+            if self.pos.triodion_day:
+                notes.append("Праздник в будний день Триоди: возможно чтение дня под зачало — "
+                             "сверьте с богослужебными указаниями.")
+            self._replace(feast["title"], feast["readings"], notes, subtitle=base_title)
+        elif feast["kind"] == "theotokos":
+            if wd < 6:
+                self._replace(feast["title"], feast["readings"],
+                              ["Рядовые чтения в этот день не читаются."], subtitle=base_title)
+            else:
+                self._theotokos_sunday(feast, base_title)
+        else:
+            self._annunciation(feast, base_title)
+
+    @staticmethod
+    def _feast_items(readings: list[dict]) -> list[Item]:
+        return [Item("feast", r["label"], r.get("ref", ""), str(r.get("zachalo", "")),
+                     service=r["service"],
+                     parts=[Part(p["ref"], str(p.get("zachalo", ""))) for p in r.get("parts", [])])
+                for r in readings]
+
+    def _replace(self, title, readings, notes, subtitle="", keep_eothinon=False):
+        eothinon_items = [i for i in self.items if i.service == "Утреня"] if keep_eothinon else []
+        if keep_eothinon and not eothinon_items and self.pos.sunday_after_pentecost:
+            n, ref, z = eothinon(self.pos.sunday_after_pentecost)
+            eothinon_items = [Item("feast", f"Евангелие {n}-е воскресное", ref, str(z),
+                                   service="Утреня")]
+        self.title, self.note = title, subtitle
+        self.items = eothinon_items + self._feast_items(readings)
+        self.notes = notes
+        self.unresolved = False
+
+    def _theotokos_sunday(self, feast, base_title):
+        self._feast_with_sunday(feast, base_title, "Богородицы", [
+            "Богородичный праздник в воскресенье: утреннее Евангелие — праздника; "
+            "на литургии читаются чтения Недели и праздника."])
+
+    def _feast_with_sunday(self, feast, base_title, suffix, head_notes):
+        f = self._feast_items(feast["readings"])
+        sunday_lit = [Item("feast", f"{i.label} Недели", i.ref, i.zachalo, service="Литургия",
+                           parts=i.parts)
+                      for i in self.items if i.service == "Литургия" and (i.ref or i.parts)]
+        feast_lit = [Item("feast", f"{i.label} {suffix}", i.ref, i.zachalo,
+                          service="Литургия") for i in f if i.service == "Литургия"]
+        before = [i for i in f if i.service != "Литургия"]   # вечерня накануне, утреня праздника
+        notes = list(head_notes)
+        notes += [n for n in self.notes if not n.startswith(("Евангелие —", "Апостол —"))]
+        self.title, self.note = feast["title"], base_title
+        self.items = before + sunday_lit + feast_lit
+        self.notes = notes
+        self.unresolved = False
+
+    def _annunciation(self, feast, base_title):
+        f = self._feast_items(feast["readings"])
+        n = self.pos.triodion_day
+        wd = self.day.weekday()
+        base = [i for i in self.items if wd == 6 or i.service != "Утреня"]
+        feast_eve = [i for i in f if i.service.startswith("Вечерня")]
+        feast_matins = [i for i in f if i.service == "Утреня"]
+        feast_lit = [i for i in f if i.service == "Литургия"]
+        base_lit = [i for i in base if i.service == "Литургия"]
+        other = [i for i in base if i.service != "Литургия"]
+        lenten_weekday = bool(n and 4 <= n <= 48 and wd <= 4)
+        if lenten_weekday:
+            other += [Item("feast", r["label"], r["ref"], service="Вечерня")
+                      for r in feast["lenten_vespers"]]
+        lit = (feast_lit + base_lit) if (n and n <= 6) else (base_lit + feast_lit)
+        rank = {"Утреня": 1, "1-й час": 2, "3-й час": 3, "6-й час": 4, "9-й час": 5,
+                "Вечерня": 6, "Литургия": 7}
+        body = sorted(feast_matins + other + lit, key=lambda i: rank.get(i.service, 8))
+        notes = ["Благовещение: чтения праздника читаются вместе с чтениями дня."]
+        if wd == 6 and any(i.service == "Утреня" for i in base):
+            notes.append("В воскресенье порядок утренних Евангелий при Благовещении — "
+                         "смотрите богослужебные указания.")
+        if lenten_weekday:
+            notes.append("Совершается Литургия свт. Иоанна Златоуста с вечерней.")
+        if (n and n <= 3) or self.pos.apostle and self.pos.apostle.period == "pascha_period" \
+                and self.pos.apostle.week in ("pascha", "2"):
+            notes.append("Совпадение Благовещения с последними днями Страстной седмицы или "
+                         "Светлой седмицей имеет особый устав — смотрите богослужебные указания.")
+        self.title, self.note = feast["title"], base_title
+        self.items = feast_eve + body
+        self.notes = notes
+        self.unresolved = False
+
     def format(self) -> str:
         lines = [f"Чтения на {self.day.strftime('%d.%m.%Y')}"]
-        if not self.pos.unresolved:
+        if not self.unresolved:
             lines.append(self.title)
             if self.note:
                 lines.append(self.note)
         # В тексте порядок привычный: Апостол, Евангелие, затем утреннее.
-        order = {"apostle": 0, "gospel": 1, "matins": 2, "vespers": 3, "triodion": 4}
+        order = {"apostle": 0, "gospel": 1, "matins": 2, "vespers": 3, "triodion": 4, "feast": 4}
         lines += [i.text() for i in sorted(self.items, key=lambda i: order[i.kind])]
         lines += self.notes
         return "\n".join(lines)
