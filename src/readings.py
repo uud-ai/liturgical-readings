@@ -588,9 +588,14 @@ def _apply_transfers(r: Reading) -> None:
         head += moved(src)
     for src in after:
         tail += moved(src)
+    # Под зачало: Апостолы подряд (свой и перенесённый), затем Евангелия.
+    is_apostle = ("Апостол", "Апостол рядовой")
     if own:
         first, last = r.items.index(own[0]), r.items.index(own[-1])
-        r.items = r.items[:first] + head + r.items[first:last + 1] + tail + r.items[last + 1:]
+        block = head + r.items[first:last + 1] + tail
+        block = ([i for i in block if i.label.startswith(is_apostle)]
+                 + [i for i in block if not i.label.startswith(is_apostle)])
+        r.items = r.items[:first] + block + r.items[last + 1:]
     else:
         r.items += head + tail
     for src in before + after:

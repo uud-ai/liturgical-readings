@@ -207,6 +207,7 @@ PAGE = """<!doctype html>
   .text sup { font: 600 10.5px var(--sans); color: var(--rubric); margin: 0 3px 0 5px;
               vertical-align: .55em; line-height: 0; }
   .initial { float: left; font: 400 3.95em/0.82 var(--serif); color: var(--rubric);
+             text-transform: uppercase;
              margin: 0.08em 0.1em 0 0; padding-top: 0.04em; }
   .text .initial + sup { margin-left: 0; }
   .ext { display: inline-block; font-size: 14px; color: var(--rubric); margin-bottom: 18px;
