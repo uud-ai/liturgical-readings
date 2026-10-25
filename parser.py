@@ -1,3 +1,9 @@
+"""Загрузка синодального текста зачал с azbyka.ru (вспомогательный скрипт).
+
+Зависимости: pip install -r requirements-parser.txt
+Основное приложение этот скрипт не использует.
+"""
+
 import json
 import time
 import requests
@@ -66,7 +72,8 @@ def process_zachala_file(input_file, output_file, type_name):
     print(f"\n--- Начинаем парсинг: {type_name} ---")
     
     count = 0
-    
+    failed = []
+
     def traverse(node):
         nonlocal count
         if isinstance(node, dict):
@@ -75,8 +82,11 @@ def process_zachala_file(input_file, output_file, type_name):
                 ref = node['ref']
                 print(f"Загрузка: {ref}...")
                 text = fetch_synodal_text(ref)
-                node['text'] = text
-                count += 1
+                if text:
+                    node['text'] = text
+                    count += 1
+                else:
+                    failed.append(ref)
                 time.sleep(1.5)
             else:
                 for k, v in node.items():
@@ -92,7 +102,9 @@ def process_zachala_file(input_file, output_file, type_name):
             json.dump(data, f, ensure_ascii=False, indent=2)
         print(f"✅ Успешно обработано зачал: {count}. Сохранено в {output_file}")
     else:
-        print("⚠️ Не найдено ни одного зачала (поля 'ref').")
+        print("⚠️ Ни одного текста не получено — файл не перезаписан.")
+    if failed:
+        print(f"⚠️ Не удалось получить текст ({len(failed)}): {', '.join(failed)}")
 
 if __name__ == "__main__":
     process_zachala_file(

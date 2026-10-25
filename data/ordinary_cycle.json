@@ -1,5 +1,5 @@
 {
-  "_comment": "Рядовые (без праздничных/святых исключений) чтения по седмицам. Ключ в pascha_period/pentecost_period — номер 'моей' недели: это блок из будних дней (mon..sat) плюс воскресенье (sun), которым он заканчивается; воскресенье pascha_period[N].sun = 'Неделя N по Пасхе', воскресенье pentecost_period[N].sun = 'Неделя N по Пятидесятнице'. pascha_period['pascha'] и ['pentecost'] — сами дни Пасхи и Пятидесятницы (особые, вне общей нумерации). Источники см. в полях source; where zachalo проверен по классическому указателю (Гречулевич), он указан отдельным полем.",
+  "_comment": "Рядовые (без праздничных/святых исключений) чтения по седмицам. Ключ в pascha_period/pentecost_period — номер 'моей' недели: это блок из будних дней (mon..sat) плюс воскресенье (sun), которым он заканчивается; воскресенье pascha_period[N].sun = 'Неделя N по Пасхе', воскресенье pentecost_period[N].sun = 'Неделя N по Пятидесятнице'. pascha_period['pascha'] и ['pentecost'] — сами дни Пасхи и Пятидесятницы (особые, вне общей нумерации). Источники см. в полях source; номер зачала (apostle_zachalo/gospel_zachalo) указан там, где ссылка совпала с указателем чтений (Гречулевич) или с лекционарием orthocal/Ponomar (сверка 25.10.2026).",
   "_coverage": {
     "pascha_period": [
       "pascha",
@@ -20,24 +20,25 @@
       "5 (полностью)",
       "6 (полностью)",
       "7 (полностью)",
-      "8 (пн-чт + вс апостол)",
+      "8 (пн-чт + вс)",
       "9 (только вс)",
       "13 (полностью)",
       "14 (полностью)",
-      "15 (без вс-апостола)",
+      "15 (полностью)",
       "16 (только вс)",
       "17 (только вс)",
       "18 (только вс)",
-      "20 (только вс, евангелие)",
-      "21 (только вс, евангелие)",
+      "20 (только вс)",
+      "21 (только вс)",
       "22 (только вс)",
       "24 (только вс)",
-      "30 (только вс, евангелие)",
+      "30 (только вс)",
       "10 (только вс)",
       "11 (только вс)",
       "12 (только вс)"
     ],
-    "not_covered": "Недели 19, 23, 25-29, 31-36 по Пятидесятнице (совсем); Триодь постная."
+    "not_covered": "Недели 19, 23, 25-29, 31-36 по Пятидесятнице (совсем); Триодь постная.",
+    "note": "После Недели по Воздвижении Евангелие берётся из другой седмицы (Лукина отступка/преступка) — это делает код (src/cycle.py), в таблице чтения хранятся по своим рядовым седмицам."
   },
   "pascha_period": {
     "pascha": {
@@ -46,33 +47,47 @@
         "gospel": "Ин.1:1-17",
         "gospel_vespers": "Ин.20:19-25",
         "note": "Светлое Христово Воскресение",
-        "source": "azbyka.ru/days/ukaz_cht.php"
+        "source": "azbyka.ru/days/ukaz_cht.php",
+        "apostle_zachalo": 1,
+        "gospel_zachalo": 1
       }
     },
     "2": {
       "mon": {
         "apostle": "Деян.1:12-17,21-26",
-        "gospel": "Ин.1:18-28"
+        "gospel": "Ин.1:18-28",
+        "apostle_zachalo": 2,
+        "gospel_zachalo": 2
       },
       "tue": {
         "apostle": "Деян.2:14-21",
-        "gospel": "Лк.24:12-35"
+        "gospel": "Лк.24:12-35",
+        "apostle_zachalo": 4,
+        "gospel_zachalo": 113
       },
       "wed": {
         "apostle": "Деян.2:22-36",
-        "gospel": "Ин.1:35-51"
+        "gospel": "Ин.1:35-51",
+        "apostle_zachalo": 5,
+        "gospel_zachalo": 4
       },
       "thu": {
         "apostle": "Деян.2:38-43",
-        "gospel": "Ин.3:1-15"
+        "gospel": "Ин.3:1-15",
+        "apostle_zachalo": 6,
+        "gospel_zachalo": 8
       },
       "fri": {
         "apostle": "Деян.3:1-8",
-        "gospel": "Ин.2:12-22"
+        "gospel": "Ин.2:12-22",
+        "apostle_zachalo": 7,
+        "gospel_zachalo": 7
       },
       "sat": {
         "apostle": "Деян.3:11-16",
-        "gospel": "Ин.3:22-33"
+        "gospel": "Ин.3:22-33",
+        "apostle_zachalo": 8,
+        "gospel_zachalo": 11
       },
       "sun": {
         "apostle": "Деян.5:12-20",
@@ -84,30 +99,41 @@
             "number": 116
           }
         },
-        "note": "Неделя 2-я, о Фоме (Антипасха)"
+        "note": "Неделя 2-я, о Фоме (Антипасха)",
+        "apostle_zachalo": 14,
+        "gospel_zachalo": 65
       }
     },
     "3": {
       "mon": {
         "apostle": "Деян.3:19-26",
-        "gospel": "Ин.2:1-11"
+        "gospel": "Ин.2:1-11",
+        "apostle_zachalo": 9,
+        "gospel_zachalo": 6
       },
       "tue": {
         "apostle": "Деян.4:1-10",
-        "gospel": "Ин.3:16-21"
+        "gospel": "Ин.3:16-21",
+        "apostle_zachalo": 10,
+        "gospel_zachalo": 10
       },
       "wed": {
         "apostle": "Деян.4:13-22",
-        "gospel": "Ин.5:17-24"
+        "gospel": "Ин.5:17-24",
+        "apostle_zachalo": 11,
+        "gospel_zachalo": 15
       },
       "thu": {
         "apostle": "Деян.4:23-31",
-        "gospel": "Ин.5:24-30"
+        "gospel": "Ин.5:24-30",
+        "apostle_zachalo": 12,
+        "gospel_zachalo": 16
       },
       "fri": {
         "apostle": "Деян.5:1-11",
         "gospel": "Ин.5:30-6:2",
-        "gospel_zachalo": 17
+        "gospel_zachalo": 17,
+        "apostle_zachalo": 13
       },
       "sat": {
         "apostle": "Деян.5:21-33",
@@ -118,8 +144,10 @@
       "sun": {
         "apostle": "Деян.6:1-7",
         "apostle_zachalo": 16,
-        "gospel_matins": "Мк.15:43-16:8",
-        "gospel_matins_zachalo": 69,
+        "gospel": "Мк.15:43-16:8",
+        "gospel_zachalo": 69,
+        "gospel_matins": "Мк.16:9-20",
+        "gospel_matins_zachalo": 71,
         "note": "Неделя 3-я, жен-мироносиц"
       }
     },
@@ -127,36 +155,47 @@
       "mon": {
         "apostle": "Деян.6:8-7:5,47-60",
         "gospel": "Ин.4:46-54",
-        "gospel_zachalo": 13
+        "gospel_zachalo": 13,
+        "apostle_zachalo": 17
       },
       "tue": {
         "apostle": "Деян.8:5-17",
         "gospel": "Ин.6:27-33",
-        "gospel_zachalo": 20
+        "gospel_zachalo": 20,
+        "apostle_zachalo": 18
       },
       "wed": {
         "apostle": "Деян.8:18-25",
         "gospel": "Ин.6:35-39",
-        "gospel_zachalo": 21
+        "gospel_zachalo": 21,
+        "apostle_zachalo": 19
       },
       "thu": {
         "apostle": "Деян.8:26-39",
-        "gospel": "Ин.6:40-44"
+        "gospel": "Ин.6:40-44",
+        "apostle_zachalo": 20,
+        "gospel_zachalo": 22
       },
       "fri": {
         "apostle": "Деян.8:40-9:19",
         "gospel": "Ин.6:48-54",
-        "gospel_zachalo": 23
+        "gospel_zachalo": 23,
+        "apostle_zachalo": 21
       },
       "sat": {
         "apostle": "Деян.9:20-31",
         "gospel": "Ин.15:17-16:2",
-        "gospel_zachalo": 52
+        "gospel_zachalo": 52,
+        "apostle_zachalo": 22
       },
       "sun": {
         "apostle": "Деян.9:32-42",
         "gospel": "Ин.5:1-15",
-        "note": "Неделя 4-я, о расслабленном"
+        "note": "Неделя 4-я, о расслабленном",
+        "gospel_matins": "Лк.24:1-12",
+        "gospel_matins_zachalo": 112,
+        "apostle_zachalo": 23,
+        "gospel_zachalo": 14
       }
     },
     "5": {
@@ -165,91 +204,129 @@
       "wed": {
         "apostle": "Деян.14:6-18",
         "gospel": "Ин.7:14-30",
-        "note": "Преполовение Пятидесятницы"
+        "note": "Преполовение Пятидесятницы",
+        "apostle_zachalo": 34,
+        "gospel_zachalo": 26
       },
       "thu": {
         "apostle": "Деян.10:34-43",
-        "gospel": "Ин.8:12-20"
+        "gospel": "Ин.8:12-20",
+        "apostle_zachalo": 26,
+        "gospel_zachalo": 29
       },
       "fri": {
         "apostle": "Деян.10:44-11:10",
-        "gospel": "Ин.8:21-30"
+        "gospel": "Ин.8:21-30",
+        "apostle_zachalo": 27,
+        "gospel_zachalo": 30
       },
       "sat": {
         "apostle": "Деян.12:1-11",
-        "gospel": "Ин.8:31-42"
+        "gospel": "Ин.8:31-42",
+        "apostle_zachalo": 29,
+        "gospel_zachalo": 31
       },
       "sun": {
         "apostle": "Деян.11:19-26,29-30",
         "gospel": "Ин.4:5-42",
-        "note": "Неделя 5-я, о самаряныне"
+        "note": "Неделя 5-я, о самаряныне",
+        "gospel_matins": "Ин.20:1-10",
+        "gospel_matins_zachalo": 63,
+        "apostle_zachalo": 28,
+        "gospel_zachalo": 12
       }
     },
     "6": {
       "mon": {
         "apostle": "Деян.12:12-17",
-        "gospel": "Ин.8:42-51"
+        "gospel": "Ин.8:42-51",
+        "apostle_zachalo": 30,
+        "gospel_zachalo": 32
       },
       "tue": {
         "apostle": "Деян.12:25-13:12",
-        "gospel": "Ин.8:51-59"
+        "gospel": "Ин.8:51-59",
+        "apostle_zachalo": 31,
+        "gospel_zachalo": 33
       },
       "wed": {
         "apostle": "Деян.13:13-24",
-        "gospel": "Ин.6:5-14"
+        "gospel": "Ин.6:5-14",
+        "apostle_zachalo": 32,
+        "gospel_zachalo": 18
       },
       "thu": {
         "apostle": "Деян.14:20-27",
-        "gospel": "Ин.9:39-10:9"
+        "gospel": "Ин.9:39-10:9",
+        "apostle_zachalo": 35,
+        "gospel_zachalo": 35
       },
       "fri": {
         "apostle": "Деян.15:5-34",
-        "gospel": "Ин.10:17-28"
+        "gospel": "Ин.10:17-28",
+        "apostle_zachalo": 36,
+        "gospel_zachalo": 37
       },
       "sat": {
         "apostle": "Деян.15:35-41",
-        "gospel": "Ин.10:27-38"
+        "gospel": "Ин.10:27-38",
+        "apostle_zachalo": 37,
+        "gospel_zachalo": 38
       },
       "sun": {
         "apostle": "Деян.16:16-34",
         "gospel": "Ин.9:1-38",
         "note": "Неделя 6-я, о слепом",
-        "gospel_matins": "Ин.20:11-18"
+        "gospel_matins": "Ин.20:11-18",
+        "apostle_zachalo": 38,
+        "gospel_zachalo": 34
       }
     },
     "7": {
       "mon": {
         "apostle": "Деян.17:1-15",
-        "gospel": "Ин.11:47-57"
+        "gospel": "Ин.11:47-57",
+        "apostle_zachalo": 39,
+        "gospel_zachalo": 40
       },
       "tue": {
         "apostle": "Деян.17:19-28",
-        "gospel": "Ин.12:19-36"
+        "gospel": "Ин.12:19-36",
+        "gospel_zachalo": 42
       },
       "wed": {
         "apostle": "Деян.18:22-28",
-        "gospel": "Ин.12:36-47"
+        "gospel": "Ин.12:36-47",
+        "apostle_zachalo": 41,
+        "gospel_zachalo": 43
       },
       "thu": {
         "apostle": "Деян.1:1-12",
         "gospel": "Лк.24:36-53",
         "gospel_matins": "Мк.16:9-20",
-        "note": "Вознесение Господне"
+        "note": "Вознесение Господне",
+        "gospel_zachalo": 114
       },
       "fri": {
         "apostle": "Деян.19:1-8",
-        "gospel": "Ин.14:1-11"
+        "gospel": "Ин.14:1-11",
+        "apostle_zachalo": 42,
+        "gospel_zachalo": 47
       },
       "sat": {
         "apostle": "Деян.20:7-12",
         "gospel": "Ин.14:10-21",
-        "source": "В. Гречулевич, «Указатель церковных чтений»"
+        "source": "В. Гречулевич, «Указатель церковных чтений»",
+        "apostle_zachalo": 43,
+        "gospel_zachalo": 48
       },
       "sun": {
         "apostle": "Деян.20:16-18,28-36",
         "gospel": "Ин.17:1-13",
         "note": "Неделя 7-я, святых отцов I Вселенского Собора",
-        "gospel_matins": "Ин.21:1-14"
+        "gospel_matins": "Ин.21:1-14",
+        "apostle_zachalo": 44,
+        "gospel_zachalo": 56
       }
     },
     "pentecost": {
@@ -257,34 +334,46 @@
         "apostle": "Деян.2:1-11",
         "gospel": "Ин.7:37-52,8:12",
         "gospel_matins": "Ин.20:19-23",
-        "note": "День Святой Троицы, Пятидесятница"
+        "note": "День Святой Троицы, Пятидесятница",
+        "apostle_zachalo": 3,
+        "gospel_zachalo": 27
       }
     },
     "8": {
       "mon": {
         "apostle": "Деян.21:8-14",
-        "gospel": "Ин.14:27-15:7"
+        "gospel": "Ин.14:27-15:7",
+        "apostle_zachalo": 45,
+        "gospel_zachalo": 49
       },
       "tue": {
         "apostle": "Деян.21:26-32",
-        "gospel": "Ин.16:2-13"
+        "gospel": "Ин.16:2-13",
+        "apostle_zachalo": 46,
+        "gospel_zachalo": 53
       },
       "wed": {
         "apostle": "Деян.23:1-11",
-        "gospel": "Ин.16:15-23"
+        "gospel": "Ин.16:15-23",
+        "apostle_zachalo": 47,
+        "gospel_zachalo": 54
       },
       "thu": {
         "apostle": "Деян.25:13-19",
-        "gospel": "Ин.16:23-33"
+        "gospel": "Ин.16:23-33",
+        "apostle_zachalo": 48,
+        "gospel_zachalo": 55
       },
       "fri": {
         "apostle": "Деян.27:1-44",
-        "gospel": "Ин.17:18-26"
+        "gospel": "Ин.17:18-26",
+        "gospel_zachalo": 57
       },
       "sat": {
         "apostle": "Деян.28:1-31",
         "gospel": "Ин.21:15-25",
-        "note": "Троицкая родительская суббота; заупокойное чтение: 1Сол.4:13-17 / Ин.5:24-30"
+        "note": "Троицкая родительская суббота; заупокойное чтение: 1Сол.4:13-17 / Ин.5:24-30",
+        "gospel_zachalo": 67
       },
       "sun": null
     }
@@ -300,23 +389,31 @@
       },
       "tue": {
         "apostle": "Рим.1:1-7,13-17",
-        "gospel": "Мф.4:25,5:1-13"
+        "gospel": "Мф.4:25,5:1-13",
+        "apostle_zachalo": 79
       },
       "wed": {
         "apostle": "Рим.1:18-27",
-        "gospel": "Мф.5:20-26"
+        "gospel": "Мф.5:20-26",
+        "apostle_zachalo": 80,
+        "gospel_zachalo": 12
       },
       "thu": {
         "apostle": "Рим.1:28-2:9",
-        "gospel": "Мф.5:27-32"
+        "gospel": "Мф.5:27-32",
+        "apostle_zachalo": 81,
+        "gospel_zachalo": 13
       },
       "fri": {
         "apostle": "Рим.2:14-29",
-        "gospel": "Мф.5:33-41"
+        "gospel": "Мф.5:33-41",
+        "apostle_zachalo": 82,
+        "gospel_zachalo": 14
       },
       "sat": {
         "apostle": "Рим.1:7-12",
-        "gospel": "Мф.5:42-48"
+        "gospel": "Мф.5:42-48",
+        "gospel_zachalo": 15
       },
       "sun": {
         "apostle": "Евр.11:33-12:2",
@@ -329,51 +426,69 @@
       "mon": {
         "apostle": "2Кор.8:7-15",
         "gospel": "Мк.3:6-12",
-        "gospel_zachalo": 11
+        "gospel_zachalo": 11,
+        "apostle_zachalo": 186
       },
       "tue": {
         "apostle": "2Кор.8:16-9:5",
-        "gospel": "Мк.3:13-19"
+        "gospel": "Мк.3:13-19",
+        "apostle_zachalo": 187,
+        "gospel_zachalo": 12
       },
       "wed": {
         "apostle": "2Кор.9:12-10:7",
-        "gospel": "Мк.3:20-27"
+        "gospel": "Мк.3:20-27",
+        "apostle_zachalo": 189
       },
       "thu": {
         "apostle": "2Кор.10:7-18",
-        "gospel": "Мк.3:28-35"
+        "gospel": "Мк.3:28-35",
+        "apostle_zachalo": 190,
+        "gospel_zachalo": 14
       },
       "fri": {
         "apostle": "2Кор.11:5-21",
-        "gospel": "Мк.4:1-9"
+        "gospel": "Мк.4:1-9",
+        "apostle_zachalo": 192,
+        "gospel_zachalo": 15
       },
       "sat": {
         "apostle": "1Кор.2:6-9",
-        "gospel": "Мф.22:15-22"
+        "gospel": "Мф.22:15-22",
+        "apostle_zachalo": 126,
+        "gospel_zachalo": 90
       },
       "sun": {
         "apostle": "1Кор.16:13-24",
         "gospel": "Мф.21:33-42",
-        "note": "Неделя 13-я по Пятидесятнице, о злых виноградарях"
+        "note": "Неделя 13-я по Пятидесятнице, о злых виноградарях",
+        "apostle_zachalo": 166,
+        "gospel_zachalo": 87
       }
     },
     "14": {
       "mon": {
         "apostle": "2Кор.12:10-19",
-        "gospel": "Мк.4:10-23"
+        "gospel": "Мк.4:10-23",
+        "apostle_zachalo": 195,
+        "gospel_zachalo": 16
       },
       "tue": {
         "apostle": "2Кор.12:20-13:2",
-        "gospel": "Мк.4:24-34"
+        "gospel": "Мк.4:24-34",
+        "apostle_zachalo": 196,
+        "gospel_zachalo": 17
       },
       "wed": {
         "apostle": "2Кор.13:3-13",
-        "gospel": "Мк.4:35-41"
+        "gospel": "Мк.4:35-41",
+        "gospel_zachalo": 18
       },
       "thu": {
         "apostle": "Гал.1:1-10,20-2:5",
         "apostle_zachalo": 198,
-        "gospel": "Мк.5:1-20"
+        "gospel": "Мк.5:1-20",
+        "gospel_zachalo": 19
       },
       "fri": {
         "apostle": "Гал.2:6-10",
@@ -382,34 +497,42 @@
       },
       "sat": {
         "apostle": "1Кор.4:1-5",
-        "gospel": "Мф.23:1-12"
+        "gospel": "Мф.23:1-12",
+        "apostle_zachalo": 130,
+        "gospel_zachalo": 93
       },
       "sun": {
         "apostle": "2Кор.1:21-2:4",
         "gospel": "Мф.22:1-14",
-        "note": "Неделя 14-я по Пятидесятнице, о браке царского сына"
+        "note": "Неделя 14-я по Пятидесятнице, о браке царского сына",
+        "apostle_zachalo": 170,
+        "gospel_zachalo": 89
       }
     },
     "15": {
       "mon": {
         "apostle": "Гал.2:11-16",
         "apostle_zachalo": 202,
-        "gospel": "Мк.5:24-34"
+        "gospel": "Мк.5:24-34",
+        "gospel_zachalo": 21
       },
       "tue": {
         "apostle": "Гал.2:21-3:7",
         "apostle_zachalo": 204,
-        "gospel": "Мк.6:1-7"
+        "gospel": "Мк.6:1-7",
+        "gospel_zachalo": 22
       },
       "wed": {
         "apostle": "Гал.3:15-22",
         "apostle_zachalo": 207,
-        "gospel": "Мк.6:7-13"
+        "gospel": "Мк.6:7-13",
+        "gospel_zachalo": 23
       },
       "thu": {
         "apostle": "Гал.3:23-4:5",
         "apostle_zachalo": 208,
-        "gospel": "Мк.6:30-45"
+        "gospel": "Мк.6:30-45",
+        "gospel_zachalo": 25
       },
       "fri": {
         "apostle": "Гал.4:8-21",
@@ -419,87 +542,111 @@
       },
       "sat": {
         "apostle": "1Кор.4:17-5:5",
-        "gospel": "Мф.24:1-13"
+        "gospel": "Мф.24:1-13",
+        "apostle_zachalo": 132,
+        "gospel_zachalo": 97
       },
       "sun": {
-        "apostle": null,
+        "apostle": "2Кор.4:6-15",
         "gospel": "Мф.22:35-46",
         "gospel_zachalo": 92,
-        "note": "Неделя 15-я по Пятидесятнице, о двух наибольших заповедях (апостольское чтение не найдено/не проверено)",
-        "gospel_matins": "Лк.24:1-12"
+        "note": "Неделя 15-я по Пятидесятнице, о двух наибольших заповедях",
+        "gospel_matins": "Лк.24:1-12",
+        "apostle_zachalo": 176
       }
     },
     "16": {
       "sun": {
         "apostle": "2Кор.6:1-10",
         "gospel": "Мф.25:14-30",
-        "note": "Неделя 16-я по Пятидесятнице, притча о талантах"
+        "note": "Неделя 16-я по Пятидесятнице, притча о талантах",
+        "apostle_zachalo": 181,
+        "gospel_zachalo": 105
       }
     },
     "17": {
       "sun": {
         "apostle": "2Кор.6:16-7:1",
         "gospel": "Мф.15:21-28",
-        "note": "Неделя 17-я по Пятидесятнице, о хананеянке"
+        "note": "Неделя 17-я по Пятидесятнице, о хананеянке",
+        "gospel_zachalo": 62
       }
     },
     "18": {
       "sun": {
         "gospel": "Лк.5:1-11",
         "gospel_zachalo": 17,
-        "note": "Неделя 18-я по Пятидесятнице, о призвании ап. Петра (апостольское чтение не проверено)"
+        "note": "Неделя 18-я по Пятидесятнице, о призвании ап. Петра",
+        "apostle": "2Кор.9:6-11",
+        "apostle_zachalo": 188
       }
     },
     "22": {
       "sun": {
         "gospel": "Лк.16:19-31",
         "gospel_zachalo": 83,
-        "note": "Неделя 22-я по Пятидесятнице, притча о богаче и Лазаре (апостольское чтение не проверено)"
+        "note": "Неделя 22-я по Пятидесятнице, притча о богаче и Лазаре",
+        "apostle": "Гал.6:11-18",
+        "apostle_zachalo": 215
       }
     },
     "24": {
       "sun": {
         "gospel": "Лк.8:41-56",
         "gospel_zachalo": 39,
-        "note": "Неделя 24-я по Пятидесятнице, об исцелении кровоточивой и воскрешении дочери Иаира (апостольское чтение не проверено)"
+        "note": "Неделя 24-я по Пятидесятнице, о воскрешении дочери Иаира",
+        "apostle": "Еф.2:14-22",
+        "apostle_zachalo": 221
       }
     },
     "3": {
       "mon": {
         "apostle": "Рим.7:1-13",
-        "gospel": "Мф.9:36-10:8"
+        "gospel": "Мф.9:36-10:8",
+        "apostle_zachalo": 94,
+        "gospel_zachalo": 34
       },
       "tue": {
         "apostle": "Рим.7:14-8:2",
-        "gospel": "Мф.10:9-15"
+        "gospel": "Мф.10:9-15",
+        "apostle_zachalo": 95,
+        "gospel_zachalo": 35
       },
       "wed": {
         "apostle": "Рим.8:2-13",
-        "gospel": "Мф.10:16-22"
+        "gospel": "Мф.10:16-22",
+        "apostle_zachalo": 96,
+        "gospel_zachalo": 36
       },
       "thu": {
         "apostle": "Рим.8:22-27",
-        "gospel": "Мф.10:23-31"
+        "gospel": "Мф.10:23-31",
+        "apostle_zachalo": 98,
+        "gospel_zachalo": 37
       },
       "fri": {
         "apostle": "Рим.9:6-19",
-        "gospel": "Мф.10:32-36,11:1"
+        "gospel": "Мф.10:32-36,11:1",
+        "apostle_zachalo": 101,
+        "gospel_zachalo": 38
       },
       "sat": {
         "apostle": "Рим.3:28-4:3",
         "gospel": "Мф.7:24-8:4",
-        "gospel_zachalo": 24
+        "gospel_zachalo": 24,
+        "apostle_zachalo": 85
       },
       "sun": {
         "apostle": "Рим.5:1-10",
         "gospel": "Мф.6:22-33",
         "gospel_zachalo": 18,
-        "note": "Неделя 3-я по Пятидесятнице"
+        "note": "Неделя 3-я по Пятидесятнице",
+        "apostle_zachalo": 88
       }
     },
     "5": {
       "mon": {
-        "apostle": "Рим.12:4-21",
+        "apostle": "Рим.12:4-5,15-21",
         "apostle_zachalo": 109,
         "gospel": "Мф.12:9-13",
         "gospel_zachalo": 45
@@ -525,7 +672,7 @@
       "fri": {
         "apostle": "Рим.16:1-16",
         "apostle_zachalo": 120,
-        "gospel": "Мф.13:4-9",
+        "gospel": "Мф.13:3-9",
         "gospel_zachalo": 50
       },
       "sat": {
@@ -564,14 +711,17 @@
       "thu": {
         "apostle": "1Кор.10:28-11:7",
         "apostle_zachalo": 147,
-        "gospel": null
+        "gospel": "Мф.16:24-28",
+        "gospel_zachalo": 69
       },
       "fri": null,
       "sat": null,
       "sun": {
         "apostle": "1Кор.1:10-18",
-        "gospel": null,
-        "note": "Неделя 8-я по Пятидесятнице, насыщение пяти тысяч (евангельское чтение не проверено)"
+        "gospel": "Мф.14:14-22",
+        "note": "Неделя 8-я по Пятидесятнице, о насыщении пяти тысяч",
+        "gospel_zachalo": 58,
+        "apostle_zachalo": 124
       }
     },
     "9": {
@@ -584,7 +734,9 @@
       "sun": {
         "apostle": "1Кор.3:9-17",
         "gospel": "Мф.14:22-34",
-        "note": "Неделя 9-я по Пятидесятнице, хождение по водам"
+        "note": "Неделя 9-я по Пятидесятнице, хождение по водам",
+        "apostle_zachalo": 128,
+        "gospel_zachalo": 59
       }
     },
     "20": {
@@ -595,9 +747,11 @@
       "fri": null,
       "sat": null,
       "sun": {
-        "apostle": null,
+        "apostle": "Гал.1:11-19",
         "gospel": "Лк.7:11-16",
-        "note": "Неделя 20-я по Пятидесятнице, о воскрешении сына вдовы Наинской (апостольское чтение не проверено)"
+        "note": "Неделя 20-я по Пятидесятнице, о воскрешении сына вдовы Наинской",
+        "apostle_zachalo": 200,
+        "gospel_zachalo": 30
       }
     },
     "21": {
@@ -608,9 +762,11 @@
       "fri": null,
       "sat": null,
       "sun": {
-        "apostle": null,
+        "apostle": "Гал.2:16-20",
         "gospel": "Лк.8:5-15",
-        "note": "Неделя 21-я по Пятидесятнице, притча о сеятеле (апостольское чтение не проверено)"
+        "note": "Неделя 21-я по Пятидесятнице, притча о сеятеле",
+        "apostle_zachalo": 203,
+        "gospel_zachalo": 35
       }
     },
     "30": {
@@ -621,42 +777,49 @@
       "fri": null,
       "sat": null,
       "sun": {
-        "apostle": null,
-        "gospel": "Мф.1:1-25",
-        "gospel_zachalo": 1,
-        "note": "Неделя святых отец (перед Рождеством Христовым) (апостольское чтение не проверено)"
+        "apostle": "Кол.3:12-16",
+        "apostle_zachalo": 258,
+        "gospel": "Лк.18:18-27",
+        "gospel_zachalo": 91,
+        "note": "Неделя 30-я по Пятидесятнице, о богатом начальнике"
       }
     },
     "2": {
       "mon": {
         "apostle": "Рим.2:28-3:18",
         "gospel": "Мф.6:31-34,7:9-11",
-        "gospel_zachalo": 19
+        "gospel_zachalo": 19,
+        "apostle_zachalo": 83
       },
       "tue": {
         "apostle": "Рим.4:4-12",
         "gospel": "Мф.7:15-21",
-        "gospel_zachalo": 22
+        "gospel_zachalo": 22,
+        "apostle_zachalo": 86
       },
       "wed": {
         "apostle": "Рим.4:13-25",
         "gospel": "Мф.7:21-23",
-        "gospel_zachalo": 23
+        "gospel_zachalo": 23,
+        "apostle_zachalo": 87
       },
       "thu": {
         "apostle": "Рим.5:10-16",
         "gospel": "Мф.8:23-27",
-        "gospel_zachalo": 27
+        "gospel_zachalo": 27,
+        "apostle_zachalo": 89
       },
       "fri": {
         "apostle": "Рим.5:17-6:2",
         "gospel": "Мф.9:14-17",
-        "gospel_zachalo": 31
+        "gospel_zachalo": 31,
+        "apostle_zachalo": 90
       },
       "sat": {
         "apostle": "Рим.3:19-26",
         "gospel": "Мф.7:1-8",
-        "gospel_zachalo": 20
+        "gospel_zachalo": 20,
+        "apostle_zachalo": 84
       },
       "sun": {
         "apostle": "Рим.2:10-16",
@@ -668,39 +831,53 @@
     "4": {
       "mon": {
         "apostle": "Рим.9:18-33",
-        "gospel": "Мф.11:2-15"
+        "gospel": "Мф.11:2-15",
+        "apostle_zachalo": 102,
+        "gospel_zachalo": 40
       },
       "tue": {
         "apostle": "Рим.10:11-11:2",
-        "gospel": "Мф.11:16-20"
+        "gospel": "Мф.11:16-20",
+        "apostle_zachalo": 104,
+        "gospel_zachalo": 41
       },
       "wed": {
         "apostle": "Рим.11:2-12",
-        "gospel": "Мф.11:20-26"
+        "gospel": "Мф.11:20-26",
+        "apostle_zachalo": 105,
+        "gospel_zachalo": 42
       },
       "thu": {
         "apostle": "Рим.11:13-24",
-        "gospel": "Мф.11:27-30"
+        "gospel": "Мф.11:27-30",
+        "apostle_zachalo": 106,
+        "gospel_zachalo": 43
       },
       "fri": {
         "apostle": "Рим.11:25-36",
-        "gospel": "Мф.12:1-8"
+        "gospel": "Мф.12:1-8",
+        "apostle_zachalo": 107,
+        "gospel_zachalo": 44
       },
       "sat": {
         "apostle": "Рим.6:11-17",
-        "gospel": "Мф.8:14-23"
+        "gospel": "Мф.8:14-23",
+        "apostle_zachalo": 92,
+        "gospel_zachalo": 26
       },
       "sun": {
         "apostle": "Рим.6:18-23",
         "gospel": "Мф.8:5-13",
-        "note": "Неделя 4-я по Пятидесятнице, об исцелении слуги сотника"
+        "note": "Неделя 4-я по Пятидесятнице, об исцелении слуги сотника",
+        "apostle_zachalo": 93,
+        "gospel_zachalo": 25
       }
     },
     "6": {
       "mon": {
         "apostle": "Рим.16:17-24",
         "apostle_zachalo": 121,
-        "gospel": "Мф.13:11-23",
+        "gospel": "Мф.13:10-23",
         "gospel_zachalo": 51
       },
       "tue": {
@@ -722,13 +899,13 @@
         "gospel_zachalo": 54
       },
       "fri": {
-        "apostle": "1Кор.4:1-8",
-        "apostle_zachalo": 130,
+        "apostle": "1Кор.4:5-8",
+        "apostle_zachalo": "130 (от полу)",
         "gospel": "Мф.13:44-54",
         "gospel_zachalo": 55
       },
       "sat": {
-        "apostle": "1Кор.9:1-5",
+        "apostle": "Рим.9:1-5",
         "apostle_zachalo": 100,
         "gospel": "Мф.9:18-26",
         "gospel_zachalo": 32
@@ -763,7 +940,7 @@
       "thu": {
         "apostle": "1Кор.7:24-35",
         "apostle_zachalo": 138,
-        "gospel": "Мф.15:12-29",
+        "gospel": "Мф.15:12-21",
         "gospel_zachalo": 61
       },
       "fri": {
@@ -796,7 +973,9 @@
       "sun": {
         "apostle": "1Кор.4:9-16",
         "gospel": "Мф.17:14-23",
-        "note": "Неделя 10-я по Пятидесятнице, об исцелении бесноватого отрока"
+        "note": "Неделя 10-я по Пятидесятнице, об исцелении бесноватого отрока",
+        "apostle_zachalo": 131,
+        "gospel_zachalo": 72
       }
     },
     "11": {
@@ -810,7 +989,8 @@
         "apostle": "1Кор.9:2-12",
         "gospel": "Мф.18:23-35",
         "gospel_zachalo": 77,
-        "note": "Неделя 11-я по Пятидесятнице, о немилосердном должнике"
+        "note": "Неделя 11-я по Пятидесятнице, о немилосердном должнике",
+        "apostle_zachalo": 141
       }
     },
     "12": {
@@ -823,7 +1003,9 @@
       "sun": {
         "apostle": "1Кор.15:1-11",
         "gospel": "Мф.19:16-26",
-        "note": "Неделя 12-я по Пятидесятнице, о богатом юноше"
+        "note": "Неделя 12-я по Пятидесятнице, о богатом юноше",
+        "apostle_zachalo": 158,
+        "gospel_zachalo": 79
       }
     }
   }

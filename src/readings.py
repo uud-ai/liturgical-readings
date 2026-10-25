@@ -1,123 +1,99 @@
-"""Логика получения чтений дня (Евангелие и Апостол по зачалам)."""
+"""Получение чтений дня (Евангелие и Апостол по зачалам)."""
+
+from __future__ import annotations
 
 import json
-from pathlib import Path
 from datetime import date
+from functools import lru_cache
 
-from src.cycle import resolve_cycle_position
-
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+from src.cycle import DATA_DIR, DayPosition, Slot, eothinon, resolve
 
 
-def _load(name: str) -> dict:
-    with open(DATA_DIR / name, encoding="utf-8") as f:
+@lru_cache(maxsize=1)
+def load_ordinary_cycle() -> dict:
+    with open(DATA_DIR / "ordinary_cycle.json", encoding="utf-8") as f:
         return json.load(f)
 
 
-def load_ordinary_cycle() -> dict:
-    return _load("ordinary_cycle.json")
+def lookup(slot: Slot | None) -> dict | None:
+    if slot is None:
+        return None
+    week = load_ordinary_cycle().get(slot.period, {}).get(slot.week) or {}
+    return week.get(slot.weekday) or None
 
 
-def load_pascha_dates() -> dict:
-    return _load("pascha_dates.json")
+def _zach(z) -> str:
+    return f" (зач. {z})" if z else ""
 
 
-def pick_pascha(day: date, pascha_dates: dict) -> date | None:
-    """Выбрать дату Пасхи того литургического года, в который попадает day."""
-    candidates = []
-    for key, val in pascha_dates.items():
-        if key.startswith("_"):
-            continue
-        candidates.append(date.fromisoformat(val["date"]))
-    candidates.sort()
-    chosen = None
-    for pascha in candidates:
-        if pascha <= day:
-            chosen = pascha
-        else:
-            break
-    return chosen
+def _week_label(slot: Slot) -> str:
+    if slot.period == "pentecost_period":
+        return f"{slot.week}-й седмицы по Пятидесятнице"
+    return f"{slot.week}-й седмицы по Пасхе"
 
 
 class Reading:
-    def __init__(self, day: date, entry: dict | None, extra_note: str = ""):
+    def __init__(self, day: date, pos: DayPosition):
         self.day = day
-        self.entry = entry
-        self.extra_note = extra_note
+        self.pos = pos
+        self.apostle_entry = lookup(pos.apostle)
+        self.gospel_entry = lookup(pos.gospel)
 
     @property
     def found(self) -> bool:
-        return bool(self.entry)
+        return bool(self.apostle_entry or self.gospel_entry)
+
+    def _title_and_note(self) -> tuple[str, str]:
+        title = self.pos.title
+        same_slot = self.pos.apostle == self.pos.gospel
+        note = (self.apostle_entry or {}).get("note", "") if same_slot else ""
+        if note.startswith(("Неделя", "Светлое", "День Святой")):
+            return note, ""
+        return title, note
 
     def format(self) -> str:
-        header = f"Чтения на {self.day.strftime('%d.%m.%Y')}"
-        if not self.found:
-            msg = self.extra_note or "Данные для этой седмицы ещё не внесены."
-            return f"{header}\n{msg}"
+        lines = [f"Чтения на {self.day.strftime('%d.%m.%Y')}"]
+        if self.pos.unresolved:
+            lines.append(self.pos.unresolved)
+            return "\n".join(lines)
 
-        lines = [header]
-        if self.entry.get("note"):
-            lines.append(self.entry["note"])
+        title, note = self._title_and_note()
+        lines.append(title)
+        if note:
+            lines.append(note)
 
-        apostle = self.entry.get("apostle")
-        if apostle:
-            z = self.entry.get("apostle_zachalo")
-            suffix = f" (зач. {z})" if z else ""
-            lines.append(f"Апостол: {apostle}{suffix}")
+        a = self.apostle_entry or {}
+        if a.get("apostle"):
+            lines.append(f"Апостол: {a['apostle']}{_zach(a.get('apostle_zachalo'))}")
+        else:
+            lines.append(f"Апостол: рядовое чтение {_week_label(self.pos.apostle)} "
+                         f"ещё не внесено.")
 
-        gospel = self.entry.get("gospel")
-        if gospel:
-            z = self.entry.get("gospel_zachalo")
-            suffix = f" (зач. {z})" if z else ""
-            lines.append(f"Евангелие: {gospel}{suffix}")
+        g = self.gospel_entry or {}
+        if g.get("gospel"):
+            lines.append(f"Евангелие: {g['gospel']}{_zach(g.get('gospel_zachalo'))}")
+        else:
+            lines.append(f"Евангелие: рядовое чтение {_week_label(self.pos.gospel)} "
+                         f"ещё не внесено.")
 
-        gm = self.entry.get("gospel_matins")
-        if gm:
-            if isinstance(gm, dict):
-                ref = gm.get("ref")
-                z = gm.get("zachalo", {}).get("number") if gm.get("zachalo") else None
-            else:
-                ref = gm
-                z = self.entry.get("gospel_matins_zachalo")
-            suffix = f" (зач. {z})" if z else ""
-            lines.append(f"Евангелие утреннее: {ref}{suffix}")
+        gm = a.get("gospel_matins")
+        if isinstance(gm, dict):
+            ref = gm.get("ref")
+            z = (gm.get("zachalo") or {}).get("number")
+        else:
+            ref, z = gm, a.get("gospel_matins_zachalo")
+        if ref:
+            lines.append(f"Евангелие утреннее: {ref}{_zach(z)}")
+        elif self.pos.sunday_after_pentecost:
+            n, ref, z = eothinon(self.pos.sunday_after_pentecost)
+            lines.append(f"Евангелие утреннее ({n}-е воскресное): {ref}{_zach(z)}")
 
-        gv = self.entry.get("gospel_vespers")
-        if gv:
-            lines.append(f"Евангелие на вечерне: {gv}")
+        if a.get("gospel_vespers"):
+            lines.append(f"Евангелие на вечерне: {a['gospel_vespers']}")
 
+        lines.extend(self.pos.notes)
         return "\n".join(lines)
 
 
 def get_reading(day: date) -> Reading:
-    pascha_dates = load_pascha_dates()
-    pascha = pick_pascha(day, pascha_dates)
-    if pascha is None:
-        return Reading(day, None, "Нет данных о дате Пасхи для этого периода.")
-
-    pos = resolve_cycle_position(day, pascha)
-    if pos.period == "unresolved":
-        return Reading(
-            day, None,
-            "Эта дата попадает в период, который пока не реализован "
-            "(Триодь постная / день Пятидесятницы / вне известных циклов)."
-        )
-
-    cycle = load_ordinary_cycle()
-    week_table = cycle.get(pos.period, {}).get(pos.week)
-    if not week_table:
-        return Reading(
-            day, None,
-            f"Данные для этой седмицы ({pos.period}, неделя {pos.week}) "
-            f"ещё не внесены — рядовые чтения для неё пока не собраны."
-        )
-
-    entry = week_table.get(pos.weekday)
-    if not entry:
-        return Reading(
-            day, None,
-            f"Данные для этого дня седмицы (неделя {pos.week}, {pos.weekday}) "
-            f"ещё не внесены."
-        )
-
-    return Reading(day, entry)
+    return Reading(day, resolve(day))

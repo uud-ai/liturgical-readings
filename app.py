@@ -116,21 +116,32 @@ HTML = """<!doctype html>
 """
 
 
+# Сервер (Vercel) работает в UTC, а «сегодня» у читателя — по его часовому
+# поясу. Если дата не передана, страница сама подставляет локальную дату.
+LOCAL_DATE_REDIRECT = """<!doctype html><meta charset="utf-8">
+<script>
+var d = new Date(), p = function (n) { return String(n).padStart(2, "0"); };
+location.replace("?date=" + d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()));
+</script>
+<noscript><meta http-equiv="refresh" content="0; url=?date={today}"></noscript>
+"""
+
+
 @app.route("/")
 def index():
-    selected_date = request.args.get("date") or date.today().isoformat()
+    selected_date = request.args.get("date")
+    if not selected_date:
+        return LOCAL_DATE_REDIRECT.replace("{today}", date.today().isoformat())
 
     try:
         day = date.fromisoformat(selected_date)
-        reading = get_reading(day)
-        content = f"<pre>{escape(reading.format())}</pre>"
     except ValueError:
         content = '<div class="error">Некорректная дата. Используйте формат ГГГГ-ММ-ДД.</div>'
-    except Exception as exc:
-        content = f'<div class="error">Для этой даты пока нет данных: {escape(str(exc))}</div>'
+    else:
+        try:
+            content = f"<pre>{escape(get_reading(day).format())}</pre>"
+        except ValueError as exc:  # например, год вне 1900–2099
+            content = f'<div class="error">{escape(str(exc))}</div>'
 
-    return HTML.replace(
-    "{selected_date}", escape(selected_date)
-).replace(
-    "{content}", content
-)
+    return HTML.replace("{selected_date}", escape(selected_date)).replace(
+        "{content}", content)
