@@ -213,6 +213,11 @@ location.replace("?date=" + d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + 
 """
 
 
+@app.route("/robots.txt")
+def robots():
+    return "User-agent: *\nAllow: /\n", 200, {"Content-Type": "text/plain; charset=utf-8"}
+
+
 @app.route("/")
 def index():
     selected = request.args.get("date")
