@@ -42,9 +42,11 @@ class CycleTest(unittest.TestCase):
         # 18.10: Апостол 20-й Недели, Евангелие 19-й (отступка).
         p = self.pos(2026, 10, 18)
         self.assertEqual((p.apostle.week, p.gospel.week), ("20", "19"))
-        # До Недели по Воздвижении включительно — без сдвига.
+        # До Недели по Воздвижении включительно Лукины чтения не начинаются: в год
+        # отступки рядовое Евангелие 18-й седмицы — из Матфеевых (azbyka.ru 01.10.2026).
         p = self.pos(2026, 10, 4)
-        self.assertEqual((p.apostle.week, p.gospel.week), ("18", "18"))
+        self.assertEqual(p.apostle.week, "18")
+        self.assertIsNone(p.gospel)
         # Понедельник после неё — Лк 3:19-22, рядовое 18-й седмицы.
         p = self.pos(2026, 10, 5)
         self.assertEqual((p.apostle.week, p.gospel.week), ("19", "18"))
@@ -124,7 +126,9 @@ class ReadingTest(unittest.TestCase):
         self.assertIn("Литургия. Апостол: Флп.2:5-11 (зач. 240)", t)
         self.assertNotIn("Недели", t)
         t = get_reading(date(2025, 9, 21)).format()  # то же в воскресенье
-        self.assertIn("Апостол Недели: 2Кор.4:6-15 (зач. 176)", t)
+        self.assertIn("Утреня. Евангелие: Лк.1:39-49,56 (зач. 4)", t)
+        self.assertIn("Гал.6:11-18 (зач. 215)", t)          # Неделя пред Воздвижением
+        self.assertIn("Апостол рядовой (под зачало): 2Кор.4:6-15 (зач. 176)", t)
         self.assertIn("Евангелие Богородицы: Лк.10:38-42,11:27-28 (зач. 54)", t)
         self.assertNotIn("воскресное", t)
         t = get_reading(date(2026, 9, 27)).format()  # Воздвижение в воскресенье
@@ -191,6 +195,47 @@ class ReadingTest(unittest.TestCase):
         self.assertIn("Мк.6:14-30 (зач. 24)", t)
         t = get_reading(date(2026, 10, 14)).format()  # Покров
         self.assertIn("Евр.9:1-7 (зач. 320)", t)
+
+    def test_commemorations(self):
+        # Эталон — azbyka.ru/biblia/days (сверено 25.10.2026).
+        t = get_reading(date(2025, 12, 19)).format()  # свт. Николай зимний (бдение, будни)
+        self.assertIn("Утреня. Евангелие: Ин.10:9-16 (зач. 36)", t)
+        self.assertIn("Рядовые чтения в этот день не читаются.", t)
+        t = get_reading(date(2026, 5, 22)).format()   # свт. Николай вешний (пасхальный период)
+        self.assertIn("Ин.14:1-11 (зач. 47)", t)
+        self.assertIn("Апостол святителю: Евр.13:17-21 (зач. 335)", t)
+        t = get_reading(date(2025, 11, 4)).format()   # Казанская (бдение)
+        self.assertNotIn("Апостол Богородицы", t)
+        self.assertIn("Литургия. Апостол: Флп.2:5-11 (зач. 240)", t)
+        t = get_reading(date(2026, 9, 8)).format()    # Владимирская (полиелей)
+        self.assertIn("Гал.2:21-3:7 (зач. 204)", t)
+        self.assertIn("Апостол Богородицы: Флп.2:5-11 (зач. 240)", t)
+        t = get_reading(date(2025, 12, 10)).format()  # Знамение
+        self.assertIn("Апостол Богородицы: Евр.9:1-7 (зач. 320)", t)
+        t = get_reading(date(2026, 4, 17)).format()   # Живоносный Источник
+        self.assertIn("Ин.2:12-22 (зач. 7)", t)
+        self.assertIn("Евангелие Богородицы: Лк.10:38-42,11:27-28 (зач. 54)", t)
+        for d in (date(2026, 7, 26), date(2026, 10, 25)):  # отцы IV и VII Соборов
+            self.assertIn("Апостол отцам: Евр.13:7-16 (зач. 334)", get_reading(d).format())
+        t = get_reading(date(2026, 6, 14)).format()   # Все святые Российские
+        self.assertIn("Апостол святым: Евр.11:33-12:2 (зач. 330)", t)
+        for d in (date(2026, 2, 8), date(2025, 2, 9)):   # новомученики
+            self.assertIn("Апостол мученикам: Рим.8:28-39 (зач. 99)", get_reading(d).format())
+        self.assertNotIn("мученикам", get_reading(date(2026, 2, 1)).format())
+
+    def test_exaltation_days(self):
+        t = get_reading(date(2026, 9, 20)).format()   # Неделя пред Воздвижением
+        self.assertIn("Гал.6:11-18 (зач. 215)", t)
+        self.assertIn("Евангелие рядовое (под зачало): Мф.25:14-30 (зач. 105)", t)
+        t = get_reading(date(2025, 9, 20)).format()   # суббота пред Воздвижением
+        self.assertIn("1Кор.2:6-9 (зач. 126)", t)
+        self.assertIn("Апостол рядовой (под зачало): 1Кор.4:17-5:5 (зач. 132)", t)
+        t = get_reading(date(2026, 10, 3)).format()   # суббота по Воздвижении
+        self.assertIn("Ин.8:21-30 (зач. 30)", t)
+        self.assertNotIn("Лк.4:31-36", t)   # azbyka: Мф 19:3-12 — из Матфеевых седмиц
+        t = get_reading(date(2026, 10, 4)).format()   # Неделя по Воздвижении
+        self.assertIn("Мк.8:34-9:1 (зач. 37)", t)
+        self.assertIn("Апостол рядовой (под зачало): 2Кор.9:6-11 (зач. 188)", t)
 
     def test_bible_links(self):
         # Коды книг — как на страницах azbyka.ru/biblia.

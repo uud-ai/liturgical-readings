@@ -169,7 +169,6 @@ def resolve(day: date) -> DayPosition:
     assert back_wd == wd
 
     elevation = date(pentecost.year, *ELEVATION)
-    sun_before_elevation = _sunday_before(elevation)
     sun_after_elevation = _sunday_after(elevation)
     zacchaeus = next_pascha - timedelta(days=77)
     theophany = date(pentecost.year + 1, *THEOPHANY)
@@ -218,15 +217,16 @@ def resolve(day: date) -> DayPosition:
 
     pos.apostle = Slot("pentecost_period", str(apostle_week), wd)
     pos.gospel = Slot("pentecost_period", str(gospel_week), wd)
+    if not (from_zacchaeus or after_theophany) and day <= sun_after_elevation \
+            and gospel_week >= FIRST_LUKE_WEEK:
+        # Год с отступкой: Матфеевы седмицы кончились, а Лукины ещё не начались —
+        # рядовое Евангелие берётся из уже прочитанных Матфеевых (azbyka.ru, 2026 г.).
+        pos.gospel = None
+        pos.notes.append("Год с Воздвиженской отступкой: до понедельника после Недели по "
+                         "Воздвижении рядовое Евангелие берётся из Матфеевых седмиц — "
+                         "смотрите богослужебные указания.")
+        return pos
 
-    special_sundays = {
-        sun_before_elevation: "Неделя пред Воздвижением: Гал. 6:11–18; Ин. 3:13–17",
-        sun_after_elevation: "Неделя по Воздвижении: Гал. 2:16–20; Мк. 8:34–9:1",
-    }
-    if day in special_sundays:
-        pos.notes.append(
-            f"{special_sundays[day]} — по уставу эти чтения читаются вместо "
-            f"рядовых (праздничные чтения в приложении не реализованы).")
     if apostle_week != week:
         pos.notes.append(f"Апостол — рядовой {apostle_week}-й седмицы "
                          f"(счёт назад от Недели о мытаре и фарисее).")

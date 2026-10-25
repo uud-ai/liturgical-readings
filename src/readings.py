@@ -36,7 +36,9 @@ def lookup(slot: Slot | None) -> dict | None:
     return week.get(slot.weekday) or None
 
 
-def _week_label(slot: Slot) -> str:
+def _week_label(slot: Slot | None) -> str:
+    if slot is None:
+        return "этого дня (по особому правилу)"
     if slot.period == "pentecost_period":
         return f"{slot.week}-й седмицы по Пятидесятнице"
     return f"{slot.week}-й седмицы по Пасхе"
@@ -138,7 +140,10 @@ class Reading:
                 ("apostle", "Апостол", a, self.pos.apostle),
                 ("gospel", "Евангелие", g, self.pos.gospel)):
             ref = entry.get(kind)
-            if ref:
+            if slot is None:
+                items.append(Item(kind, label, service="Литургия",
+                                  missing="рядовое — из Матфеевых седмиц, смотрите богослужебные указания."))
+            elif ref:
                 items.append(Item(kind, label, ref, str(entry.get(f"{kind}_zachalo") or ""),
                                   service="Литургия"))
             else:
@@ -218,6 +223,9 @@ class Reading:
             self._special_day(special, feast)
             return
         if not feast:
+            for c in data.get("commemorations", []):
+                if self._commemoration_matches(c, key, wd):
+                    self._apply_commemoration(c)
             return
         self.feast_kind = feast["kind"]
         base_title = "" if self.unresolved else (self.pos.title or self.title)
@@ -281,14 +289,107 @@ class Reading:
         title, subtitle = sp["name"], base_title
         if feast:
             self.feast_kind = feast["kind"]
-            items += self._feast_items(feast["readings"])
+            f = self._feast_items(feast["readings"])
+            suffix = "Богородицы" if feast["kind"] == "theotokos" else "праздника"
+            eve = [i for i in f if i.service.startswith("Вечерня")]
+            f_matins = [i for i in f if i.service == "Утреня"]
+            f_lit = [Item("feast", f"{i.label} {suffix}" if i.label in ("Апостол", "Евангелие")
+                          else i.label, i.ref, i.zachalo, service=i.service, parts=i.parts)
+                     for i in f if i.service not in ("Утреня",) and not i.service.startswith("Вечерня")]
+            if feast["kind"] == "theotokos":
+                matins = f_matins           # Богородичный: утреннее Евангелие праздника
+            body = [i for i in items if i.service != "Утреня"]
+            items = eve + matins + body + f_lit
             title, subtitle = feast["title"], sp["name"]
-            notes.insert(0, "Праздник совпадает с особым днём: читаются чтения дня и праздника — "
-                            "порядок сверьте с богослужебными указаниями.")
+            notes.insert(0, "Праздник совпадает с особым днём: читаются чтения особого дня "
+                            "и праздника.")
         self.title, self.note = title, subtitle
         self.items = items
         self.notes = notes
         self.unresolved = False
+
+    # --- памяти святых и икон, памятные воскресенья -----------------------
+
+    def _commemoration_matches(self, c: dict, key: str, wd: int) -> bool:
+        rule = c["rule"]
+        if rule["type"] == "fixed":
+            return key == rule["date"]
+        if rule["type"] == "sunday_range":
+            return wd == 6 and rule["from"] <= key <= rule["to"]
+        if rule["type"] == "pentecost_sunday":
+            return (wd == 6 and not self.pos.triodion_day and self.pos.apostle is not None
+                    and self.pos.apostle.period == "pentecost_period"
+                    and self.pos.sunday_after_pentecost == rule["n"])
+        if rule["type"] == "bright_friday":
+            return self.pos.apostle == Slot("pascha_period", "2", "fri")
+        if rule["type"] == "new_martyrs":
+            # 25 января ст. ст. (7 февраля); пн–ср — предыдущее воскресенье,
+            # чт–сб — следующее (Архиерейский Собор 2013 г.).
+            f = date(self.day.year, 2, 7)
+            w = f.weekday()
+            if w == 6:
+                target = f
+            elif w <= 2:
+                target = f - timedelta(days=w + 1)
+            else:
+                target = f + timedelta(days=6 - w)
+            return self.day == target
+        return False
+
+    def _apply_commemoration(self, c: dict) -> None:
+        name, suffix, rank = c["name"], c["suffix"], c["rank"]
+        wd = self.day.weekday()
+        n = self.pos.triodion_day
+        a = self.pos.apostle
+        bright = a is not None and a.period == "pascha_period" and a.week in ("pascha", "2")
+        special_day = (bool(n and n <= 6) or (bright and c["rule"]["type"] != "bright_friday")
+                       or a in (Slot("pascha_period", "7", "thu"),
+                                Slot("pascha_period", "pentecost", "sun")))
+        if special_day:
+            self.notes.append(f"Память: {name}. В этот день служба совершается по особому "
+                              f"уставу — смотрите богослужебные указания.")
+            return
+        f = self._feast_items(c["readings"])
+        eve = [i for i in f if i.service.startswith("Вечерня (накануне)")]
+        matins = [i for i in f if i.service == "Утреня"]
+        lit = [Item("feast", f"{i.label} {suffix}", i.ref, i.zachalo, service="Литургия",
+                    parts=i.parts) for i in f if i.service == "Литургия"]
+        if n and 9 <= n <= 48 and wd <= 4:
+            self.items = matins + self.items
+            self.note = name
+            self.notes.append(f"{name}: в будни Великого поста литургийных чтений памяти нет.")
+            return
+        base_title = "" if self.unresolved else (self.pos.title or self.title)
+        in_pascha = a is not None and a.period == "pascha_period"
+        if rank == "vigil" and wd <= 5 and not in_pascha:
+            self._replace(name, c["readings"], ["Рядовые чтения в этот день не читаются."],
+                          subtitle=base_title)
+            self.feast_kind = "vigil"
+            return
+        base = [Item("feast", i.label, i.ref, i.zachalo, i.missing, i.service, i.parts)
+                for i in self.items]
+        base_matins = [i for i in base if i.service == "Утреня"]
+        base_rest = [i for i in base if i.service != "Утреня"]
+        if wd == 6:
+            matins = base_matins            # в воскресенье утреннее Евангелие — воскресное
+            if not matins and self.pos.sunday_after_pentecost:
+                k, ref, z = eothinon(self.pos.sunday_after_pentecost)
+                matins = [Item("feast", f"Евангелие {k}-е воскресное", ref, str(z),
+                               service="Утреня")]
+        elif bright:
+            matins = []
+        if rank == "sunday":
+            eve = []
+        self.items = eve + matins + base_rest + lit
+        if self.unresolved:
+            self.unresolved = False         # сообщение о рядовых остаётся в notes
+        else:
+            self.note = name if not self.note else f"{self.note}. {name}"
+        if self.unresolved is False and not base_title:
+            self.title = name
+        self.feast_kind = self.feast_kind or rank
+        self.notes.append("На литургии читаются чтения " + ("Недели" if wd == 6 else "дня")
+                          + " и памяти.")
 
     @staticmethod
     def _feast_items(readings: list[dict]) -> list[Item]:
