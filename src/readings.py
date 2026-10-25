@@ -10,7 +10,6 @@ from functools import cached_property, lru_cache
 
 from src.bible_text import passage_text
 from src.cycle import DATA_DIR, DayPosition, Slot, eothinon, resolve
-from src.links import bible_url, day_url
 
 
 @lru_cache(maxsize=1)
@@ -52,10 +51,6 @@ class Part:
     ref: str
     zachalo: str = ""
 
-    @property
-    def url(self) -> str | None:
-        return bible_url(self.ref)
-
     def text(self) -> str:
         return self.ref + (f" (зач. {self.zachalo})" if self.zachalo else "")
 
@@ -70,10 +65,6 @@ class Item:
     missing: str = ""  # пояснение, если ref пуст
     service: str = ""  # «Литургия», «Утреня», «6-й час», …
     parts: list[Part] = field(default_factory=list)  # для составных чтений
-
-    @property
-    def url(self) -> str | None:
-        return bible_url(self.ref) if self.ref else None
 
     def text(self) -> str:
         label = (f"{self.service}. {self.label}" if self.kind in ("triodion", "feast")
@@ -130,10 +121,6 @@ class Reading:
     def vestment(self):
         from src.vestments import vestment
         return vestment(self)
-
-    @property
-    def azbyka_day_url(self) -> str:
-        return day_url(self.day)
 
     def _title_and_note(self) -> tuple[str, str]:
         title = self.pos.title

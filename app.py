@@ -202,7 +202,7 @@ PAGE = """<!doctype html>
   .missing { padding: 16px 0; border-bottom: 1px solid var(--hair); }
   .missing p { margin: 2px 0 0; font: italic 17px/1.45 var(--serif); color: var(--muted); }
 
-  .text { font: 400 19px/1.78 var(--serif); margin: 2px 0 14px; hyphens: auto;
+  .text { font: 400 19px/1.78 var(--serif); margin: 2px 0 22px; hyphens: auto;
           text-wrap: pretty; max-width: 62ch; }
   .text sup { font: 600 10.5px var(--sans); color: var(--rubric); margin: 0 3px 0 5px;
               vertical-align: .55em; line-height: 0; }
@@ -210,18 +210,14 @@ PAGE = """<!doctype html>
              text-transform: uppercase;
              margin: 0.08em 0.1em 0 0; padding-top: 0.04em; }
   .text .initial + sup { margin-left: 0; }
-  .ext { display: inline-block; font-size: 14px; color: var(--rubric); margin-bottom: 18px;
-         text-underline-offset: 3px; }
 
   .unresolved { font: italic 18px/1.5 var(--serif); color: var(--muted); margin: 18px 0; }
-  .unresolved a { color: var(--rubric); }
 
   .rubrics { margin: 34px 0 0; padding: 18px 0 0; border-top: 1px solid var(--hair); }
   .rubrics p { font: italic 16px/1.55 var(--serif); color: var(--rubric); margin: 0 0 10px;
                text-wrap: pretty; }
 
   footer { margin-top: 42px; font-size: 13px; line-height: 1.6; color: var(--muted); max-width: 60ch; }
-  footer a { color: var(--rubric); text-underline-offset: 2px; }
 
   @media (max-width: 520px) {
     .wrap { padding: 0 16px; }
@@ -267,10 +263,9 @@ PAGE = """<!doctype html>
 
 <main class="wrap">
 {% if not error %}
-  {% macro body(ref, url) %}
+  {% macro body(ref) %}
     {% set t = passage_html(ref) %}
     {% if t %}<div class="text">{{ t }}</div>{% endif %}
-    {% if url %}<a class="ext" href="{{ url }}" target="_blank" rel="noopener">Читать на «Азбуке веры»</a>{% endif %}
   {% endmacro %}
   {% macro summary(label, ref, zachalo) %}
     <summary>
@@ -294,19 +289,18 @@ PAGE = """<!doctype html>
           <div class="parts">
             <div class="group-label">{{ i.label }}</div>
             {% for p in i.parts %}
-              <details class="part">{{ summary("", p.ref, p.zachalo) }}{{ body(p.ref, p.url) }}</details>
+              <details class="part">{{ summary("", p.ref, p.zachalo) }}{{ body(p.ref) }}</details>
             {% endfor %}
           </div>
         {% elif i.ref %}
-          <details class="reading">{{ summary(i.label, i.ref, i.zachalo) }}{{ body(i.ref, i.url) }}</details>
+          <details class="reading">{{ summary(i.label, i.ref, i.zachalo) }}{{ body(i.ref) }}</details>
         {% else %}
           <div class="missing"><span class="label">{{ i.label }}</span><p>{{ i.missing }}</p></div>
         {% endif %}
       {% endfor %}
     </section>
   {% else %}
-    <p class="unresolved">Рядовые чтения на этот день приложение пока не выдаёт. Чтения дня можно посмотреть
-      <a href="{{ r.azbyka_day_url }}" target="_blank" rel="noopener">на «Азбуке веры»</a>.</p>
+    <p class="unresolved">Рядовые чтения на этот день приложение пока не выдаёт — смотрите богослужебные указания.</p>
   {% endfor %}
 
   {% if r.notes %}
@@ -317,9 +311,8 @@ PAGE = """<!doctype html>
 
   <footer>
     Рядовые чтения, Триодь постная, праздники и чтимые святые по уставу Русской Церкви.
-    Текст — Синодальный перевод (цифровое издание проекта Ponomar). Цвет облачения указан
-    по общему обычаю, местная практика может отличаться.
-    Все чтения дня — <a href="{{ r.azbyka_day_url }}" target="_blank" rel="noopener">на «Азбуке веры»</a>.
+    Текст — Синодальный перевод. Цвет облачения указан по общему обычаю, местная практика
+    может отличаться.
   </footer>
 {% endif %}
 </main>

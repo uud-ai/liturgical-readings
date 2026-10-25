@@ -7,8 +7,8 @@
 import unittest
 from datetime import date
 
+from src.bible_text import passage
 from src.cycle import computed_pascha, eothinon, resolve
-from src.links import bible_url
 from src.readings import get_reading
 
 
@@ -378,24 +378,6 @@ class ReadingTest(unittest.TestCase):
         for day, key in cases.items():
             self.assertEqual(get_reading(day).vestment.key, key, day)
 
-    def test_bible_links(self):
-        # Коды книг — как на страницах azbyka.ru/biblia.
-        self.assertEqual(bible_url("Иак.2:14-26"), "https://azbyka.ru/biblia/?Jac.2:14-26")
-        self.assertEqual(bible_url("Евр.7:26-8:2"), "https://azbyka.ru/biblia/?Hebr.7:26-8:2")
-        self.assertEqual(bible_url("Флп.1:1-7"), "https://azbyka.ru/biblia/?Phil.1:1-7")
-        self.assertEqual(bible_url("3Цар.17:8-24"), "https://azbyka.ru/biblia/?1King.17:8-24")
-
-    def test_feasts_links(self):
-        from src.readings import load_feasts
-        d = load_feasts()
-        lists = [f["readings"] for f in d["feasts"].values()]
-        lists += [v for e in d["eves"].values() for v in e.values() if isinstance(v, list)]
-        for lst in lists:
-            for r in lst:
-                for ref in [r.get("ref")] + [p["ref"] for p in r.get("parts", [])]:
-                    if ref:
-                        self.assertIsNotNone(bible_url(ref), ref)
-
     def test_triodion_table_complete(self):
         from src.readings import load_triodion
         t = load_triodion()
@@ -404,7 +386,7 @@ class ReadingTest(unittest.TestCase):
             for r in t[str(n)]["readings"]:
                 for ref in [r.get("ref")] + [p["ref"] for p in r.get("parts", [])]:
                     if ref:
-                        self.assertIsNotNone(bible_url(ref), ref)
+                        self.assertTrue(passage(ref), ref)
 
     def test_full_ordinary_cycle(self):
         # В реализованных периодах нет дней без данных.
