@@ -56,11 +56,20 @@ class CycleTest(unittest.TestCase):
         self.assertIsNone(self.pos(2027, 2, 20).triodion_day)
         self.assertIsNone(self.pos(2027, 5, 2).triodion_day)
 
-    def test_winter_period_not_implemented(self):
-        # Неделя святых отец 03.01.2027 … суббота перед Закхеем 13.02.2027.
-        self.assertFalse(self.pos(2027, 1, 2).unresolved)
-        self.assertTrue(self.pos(2027, 1, 3).unresolved)
-        self.assertTrue(self.pos(2027, 2, 13).unresolved)
+    def test_winter_period(self):
+        # До Богоявления — прямой счёт с Лукиной преступкой (azbyka.ru 09.01.2025, 12.01.2026).
+        p = self.pos(2026, 1, 12)
+        self.assertEqual((p.apostle.week, p.gospel.week), ("32", "33"))
+        p = self.pos(2025, 1, 9)
+        self.assertEqual((p.apostle.week, p.gospel.week), ("29", "32"))
+        # После Богоявления — обратный счёт (azbyka.ru 22.01.2025, 20.01.2026).
+        p = self.pos(2026, 1, 20)
+        self.assertEqual((p.apostle.week, p.gospel.week), ("32", "32"))
+        p = self.pos(2025, 1, 22)
+        self.assertEqual((p.apostle.week, p.gospel.week), ("31", "31"))
+        # Воскресенья между Богоявлением и Закхеем (перенос Евангелий) не реализованы.
+        self.assertTrue(self.pos(2027, 1, 31).unresolved)
+        self.assertFalse(self.pos(2027, 2, 14).unresolved)
 
     def test_zacchaeus(self):
         p = self.pos(2027, 2, 14)
@@ -141,6 +150,32 @@ class ReadingTest(unittest.TestCase):
         t = get_reading(date(2027, 1, 6)).format()   # навечерие Рождества в среду
         self.assertIn("1-й час. Евангелие: Мф.1:18-25 (зач. 2)", t)
         self.assertIn("Вечерня с Литургией свт. Василия Великого. Евангелие: Лк.2:1-20 (зач. 5)", t)
+
+    def test_special_days(self):
+        # Эталон — azbyka.ru/biblia/days (сверено 25.10.2026).
+        t = get_reading(date(2025, 12, 28)).format()  # Неделя праотец
+        self.assertIn("Кол.3:4-11 (зач. 257)", t)
+        self.assertIn("Лк.14:16-24 (зач. 76)", t)
+        t = get_reading(date(2026, 1, 3)).format()    # суббота пред Рождеством
+        self.assertIn("Гал.3:8-12 (зач. 205)", t)
+        self.assertIn("Апостол рядовой (под зачало): Еф.5:1-8 (зач. 228)", t)
+        self.assertIn("Евангелие рядовое (под зачало): Лк.16:10-15 (зач. 81)", t)
+        t = get_reading(date(2026, 1, 4)).format()    # Неделя святых отец
+        self.assertIn("Евангелие 8-е воскресное: Ин.20:11-18 (зач. 64)", t)
+        self.assertIn("Мф.1:1-25 (зач. 1)", t)
+        t = get_reading(date(2026, 1, 10)).format()   # суббота по Рождестве
+        self.assertIn("1Тим.6:11-16 (зач. 288)", t)
+        t = get_reading(date(2026, 1, 11)).format()   # Неделя по Рождестве
+        self.assertIn("Гал.1:11-19 (зач. 200)", t)
+        self.assertIn("Мф.2:13-23 (зач. 4)", t)
+        t = get_reading(date(2026, 1, 14)).format()   # Обрезание
+        self.assertIn("Кол.2:8-12 (зач. 254)", t)
+        t = get_reading(date(2026, 1, 24)).format()   # суббота по Богоявлении
+        self.assertIn("Еф.6:10-17 (зач. 233)", t)
+        self.assertIn("Апостол рядовой (под зачало): 1Фес.5:14-23 (зач. 273)", t)
+        t = get_reading(date(2026, 1, 25)).format()   # Неделя по Богоявлении = о Закхее
+        self.assertIn("Еф.4:7-13 (зач. 224 от полу)", t)
+        self.assertIn("Евангелие рядовое (под зачало): Лк.19:1-10 (зач. 94)", t)
 
     def test_bible_links(self):
         # Коды книг — как на страницах azbyka.ru/biblia.

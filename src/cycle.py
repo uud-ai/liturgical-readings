@@ -11,9 +11,9 @@
 * Евангелие со дня после Недели по Воздвижении читается от Луки, начиная
   с рядового Евангелия 18-й седмицы, независимо от счёта седмиц
   (Воздвиженская отступка/преступка).
-* От Недели святых отец перед Рождеством до Недели о Закхее действуют
-  особые правила (рождественская и крещенская отступки) — не реализовано,
-  приложение честно сообщает об этом.
+* После Богоявления (Крещенская отступка) будни читаются по обратному счёту
+  от следующей Пасхи; воскресенья между Богоявлением и Неделей о Закхее
+  (перенос пропущенных воскресных Евангелий) не реализованы.
 * С Недели о Закхее (за 77 дней до следующей Пасхи) чтения отсчитываются
   назад от следующей Пасхи: Неделя о Закхее — 32-я, будни после неё — 33-я.
 * С Недели о мытаре и фарисее (за 70 дней до Пасхи) до Великой Субботы —
@@ -39,8 +39,9 @@ WEEKDAY_RU = ["понедельник", "вторник", "среда", "чет�
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
-# Воздвижение 14/27 сентября (новый стиль, 1900–2099).
+# Воздвижение 14/27 сентября, Богоявление 6/19 января (новый стиль, 1900–2099).
 ELEVATION = (9, 27)
+THEOPHANY = (1, 19)
 
 # Последняя седмица, чтения которой берутся по прямому счёту для Апостола.
 LAST_FORWARD_APOSTLE_SUNDAY = 32
@@ -170,32 +171,29 @@ def resolve(day: date) -> DayPosition:
     elevation = date(pentecost.year, *ELEVATION)
     sun_before_elevation = _sunday_before(elevation)
     sun_after_elevation = _sunday_after(elevation)
-    # Неделя святых праотец (11–17 декабря ст. ст.) и Неделя святых отец
-    # перед Рождеством (18–24 декабря ст. ст.).
-    forefathers = _sunday_after(date(pentecost.year, 12, 23))
-    fathers_before_nativity = forefathers + timedelta(days=7)
     zacchaeus = next_pascha - timedelta(days=77)
+    theophany = date(pentecost.year + 1, *THEOPHANY)
 
     # С Недели о Закхее чтения всегда берутся по обратному счёту:
     # Неделя о Закхее — 32-я, будни перед Триодью — 33-я седмица.
     from_zacchaeus = day >= zacchaeus
+    # После Богоявления — Крещенская отступка: тоже обратный счёт.
+    after_theophany = day > theophany
 
-    if not from_zacchaeus and day >= fathers_before_nativity:
-        pos.unresolved = (
-            "Период от Недели святых отец перед Рождеством до Недели о Закхее: "
-            "рядовые чтения здесь определяются особыми правилами (рождественская "
-            "и крещенская отступки, перенос пропущенных воскресных Евангелий) — "
-            "пока не реализовано, смотрите богослужебные указания.")
-        return pos
-
-    if from_zacchaeus:
+    if from_zacchaeus or after_theophany:
+        if after_theophany and is_sunday and not from_zacchaeus:
+            pos.unresolved = (
+                "Воскресенье между Богоявлением и Неделей о Закхее: по уставу читаются "
+                "воскресные Евангелия, пропущенные из-за Воздвиженской преступки "
+                "(Крещенская отступка), — пока не реализовано, смотрите богослужебные "
+                "указания.")
+            return pos
         apostle_week = gospel_week = back_week
     else:
-        # Апостол — по счёту от Пятидесятницы. После 32-й Недели (возможно
-        # в годы с поздней следующей Пасхой) — обратный счёт, как в orthocal.
+        # Апостол — по счёту от Пятидесятницы.
         past_32nd_sunday = (week > LAST_FORWARD_APOSTLE_SUNDAY
                             or (week == LAST_FORWARD_APOSTLE_SUNDAY and is_sunday))
-        apostle_week = back_week if past_32nd_sunday else week
+        apostle_week = week
         # Евангелие — от Луки с понедельника после Недели по Воздвижении.
         if day > sun_after_elevation:
             first_luke_monday = sun_after_elevation + timedelta(days=1)
@@ -203,6 +201,20 @@ def resolve(day: date) -> DayPosition:
                 first_luke_monday, pentecost)[0]
         else:
             gospel_week = week
+        # Неделя святых отец пред Рождеством (18–24 декабря ст. ст.).
+        fathers_sunday = _sunday_after(date(pentecost.year, 12, 30))
+        if day >= fathers_sunday and gospel_week < week:
+            pos.unresolved = (
+                "Год с Воздвиженской отступкой: порядок рядовых чтений от Недели святых "
+                "отец до Богоявления в такие годы особый (по azbyka.ru он расходится с "
+                "прямым счётом) — пока не реализовано, смотрите богослужебные указания.")
+            return pos
+        if past_32nd_sunday or gospel_week > 33:
+            pos.unresolved = (
+                "Рядовые седмицы этого года исчерпаны до Богоявления (ранняя Пасха): "
+                "порядок рядовых чтений до Богоявления определяется особыми правилами — "
+                "пока не реализовано, смотрите богослужебные указания.")
+            return pos
 
     pos.apostle = Slot("pentecost_period", str(apostle_week), wd)
     pos.gospel = Slot("pentecost_period", str(gospel_week), wd)
@@ -210,7 +222,6 @@ def resolve(day: date) -> DayPosition:
     special_sundays = {
         sun_before_elevation: "Неделя пред Воздвижением: Гал. 6:11–18; Ин. 3:13–17",
         sun_after_elevation: "Неделя по Воздвижении: Гал. 2:16–20; Мк. 8:34–9:1",
-        forefathers: "Неделя святых праотец: Кол. 3:4–11; Лк. 14:16–24",
     }
     if day in special_sundays:
         pos.notes.append(
@@ -220,7 +231,7 @@ def resolve(day: date) -> DayPosition:
         pos.notes.append(f"Апостол — рядовой {apostle_week}-й седмицы "
                          f"(счёт назад от Недели о мытаре и фарисее).")
     if gospel_week != week:
-        if from_zacchaeus:
+        if from_zacchaeus or after_theophany:
             reason = "счёт назад от Недели о мытаре и фарисее"
         elif gospel_week < week:
             reason = "Воздвиженская отступка"

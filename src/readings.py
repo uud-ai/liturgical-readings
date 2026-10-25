@@ -212,6 +212,11 @@ class Reading:
             return
 
         feast = data["feasts"].get(key)
+        special = next((sp for sp in data["special_days"]
+                        if sp["weekday"] == wd and sp["from"] <= key <= sp["to"]), None)
+        if special:
+            self._special_day(special, feast)
+            return
         if not feast:
             return
         self.feast_kind = feast["kind"]
@@ -233,7 +238,7 @@ class Reading:
                 notes.append("Праздник в будний день Триоди: возможно чтение дня под зачало — "
                              "сверьте с богослужебными указаниями.")
             self._replace(feast["title"], feast["readings"], notes, subtitle=base_title)
-        elif feast["kind"] == "theotokos":
+        elif feast["kind"] in ("theotokos", "great"):
             if wd < 6:
                 self._replace(feast["title"], feast["readings"],
                               ["Рядовые чтения в этот день не читаются."], subtitle=base_title)
@@ -241,6 +246,40 @@ class Reading:
                 self._theotokos_sunday(feast, base_title)
         else:
             self._annunciation(feast, base_title)
+
+    def _special_day(self, sp: dict, feast: dict | None) -> None:
+        """Особые субботы и Недели пред и по Рождестве и Богоявлении, Неделя праотец."""
+        base_title = "" if self.unresolved else (self.pos.title or self.title)
+        matins = []
+        if self.day.weekday() == 6 and self.pos.sunday_after_pentecost:
+            n, ref, z = eothinon(self.pos.sunday_after_pentecost)
+            matins = [Item("feast", f"Евангелие {n}-е воскресное", ref, str(z), service="Утреня")]
+        items = matins + self._feast_items(sp["readings"])
+        notes = []
+        if sp["ordinary"] == "omit":
+            notes.append("Рядовые чтения в эту Неделю не читаются.")
+        else:
+            ordinary = [] if self.unresolved else [
+                i for i in self.items if i.service == "Литургия" and (i.ref or i.parts)]
+            if ordinary:
+                items += [Item("feast", "Апостол рядовой (под зачало)" if i.kind == "apostle"
+                               else "Евангелие рядовое (под зачало)", i.ref, i.zachalo,
+                               service="Литургия") for i in ordinary]
+                notes += [n for n in self.notes if n.startswith(("Евангелие —", "Апостол —"))]
+            else:
+                notes.append("Читаются также рядовые чтения (под зачало) — в этот период "
+                             "смотрите богослужебные указания.")
+        title, subtitle = sp["name"], base_title
+        if feast:
+            self.feast_kind = feast["kind"]
+            items += self._feast_items(feast["readings"])
+            title, subtitle = feast["title"], sp["name"]
+            notes.insert(0, "Праздник совпадает с особым днём: читаются чтения дня и праздника — "
+                            "порядок сверьте с богослужебными указаниями.")
+        self.title, self.note = title, subtitle
+        self.items = items
+        self.notes = notes
+        self.unresolved = False
 
     @staticmethod
     def _feast_items(readings: list[dict]) -> list[Item]:
