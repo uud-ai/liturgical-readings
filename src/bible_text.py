@@ -100,6 +100,6 @@ def passage_text(ref: str) -> str:
     prev_ch = None
     for v in passage(ref):
         num = f"{v.chapter}:{v.verse}" if v.chapter != prev_ch else str(v.verse)
-        parts.append(f"[{num}] {v.plain}")
+        parts.append(f"[{num}] " + v.plain.replace(" -- ", " — ").replace("--", "—"))
         prev_ch = v.chapter
     return " ".join(parts)

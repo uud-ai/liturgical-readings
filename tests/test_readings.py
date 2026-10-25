@@ -355,6 +355,29 @@ class ReadingTest(unittest.TestCase):
             self.assertNotIn("за понедельник", t, day)
             self.assertNotIn("за четверг", t, day)
 
+    def test_vestments(self):
+        # Цвет облачения — по таблице azbyka.ru (общий обычай Русской Церкви).
+        cases = {
+            date(2026, 10, 25): "gold",    # воскресенье
+            date(2026, 4, 12): "red",      # Пасха
+            date(2026, 5, 21): "white",    # Вознесение
+            date(2026, 5, 31): "green",    # Троица
+            date(2026, 3, 2): "black",     # будни Великого поста
+            date(2026, 3, 8): "purple",    # Неделя Великого поста
+            date(2026, 4, 4): "white",     # Лазарева суббота
+            date(2026, 4, 5): "green",     # Вход Господень
+            date(2026, 4, 9): "purple",    # Великий Четверг
+            date(2026, 4, 10): "black",    # Великая Пятница
+            date(2026, 1, 25): "white",    # попразднство Богоявления
+            date(2026, 9, 27): "purple",   # Воздвижение
+            date(2026, 10, 14): "blue",    # Покров
+            date(2026, 9, 11): "red",      # Усекновение
+            date(2026, 10, 8): "green",    # прп. Сергий
+            date(2026, 5, 6): "red",       # вмч. Георгий в пасхальный период
+        }
+        for day, key in cases.items():
+            self.assertEqual(get_reading(day).vestment.key, key, day)
+
     def test_bible_links(self):
         # Коды книг — как на страницах azbyka.ru/biblia.
         self.assertEqual(bible_url("Иак.2:14-26"), "https://azbyka.ru/biblia/?Jac.2:14-26")

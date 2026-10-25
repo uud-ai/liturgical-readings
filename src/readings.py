@@ -107,6 +107,7 @@ class Reading:
         self.ordinary_lit = [i for i in self.items if i.service == "Литургия" and i.ref
                              and i.kind in ("apostle", "gospel")]
         self.replaced = False      # рядовые вытеснены праздником, навечерием, бдением
+        self.memories: list[dict] = []   # памяти святых и икон, совпавшие с днём
         self.feast_kind = ""
         self._apply_fixed_feasts()
 
@@ -124,6 +125,11 @@ class Reading:
             else:
                 out.append((item.service, [item]))
         return out
+
+    @property
+    def vestment(self):
+        from src.vestments import vestment
+        return vestment(self)
 
     @property
     def azbyka_day_url(self) -> str:
@@ -350,6 +356,7 @@ class Reading:
         return False
 
     def _apply_commemoration(self, c: dict) -> None:
+        self.memories.append(c)
         name, suffix, rank = c["name"], c["suffix"], c["rank"]
         wd = self.day.weekday()
         n = self.pos.triodion_day
