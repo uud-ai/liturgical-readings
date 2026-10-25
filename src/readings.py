@@ -6,10 +6,10 @@ import json
 import re
 from dataclasses import dataclass, field
 from datetime import date, timedelta
-from functools import lru_cache
+from functools import cached_property, lru_cache
 
-from src.cycle import DATA_DIR, DayPosition, Slot, eothinon, resolve
 from src.bible_text import passage_text
+from src.cycle import DATA_DIR, DayPosition, Slot, eothinon, resolve
 from src.links import bible_url, day_url
 
 
@@ -126,7 +126,7 @@ class Reading:
                 out.append((item.service, [item]))
         return out
 
-    @property
+    @cached_property
     def vestment(self):
         from src.vestments import vestment
         return vestment(self)
@@ -202,7 +202,7 @@ class Reading:
 
     def _apply_fixed_feasts(self) -> None:
         data = load_feasts()
-        old = self.day - timedelta(days=13)          # старый стиль (1900–2099)
+        old = self.day - timedelta(days=13)          # старый стиль (см. cycle.FIRST_DAY)
         key = f"{old.month:02d}-{old.day:02d}"
         wd = self.day.weekday()                       # 0 — понедельник, 6 — воскресенье
 
@@ -255,9 +255,9 @@ class Reading:
                              "Неделю сыропустную — смотрите богослужебные указания.")
             if self.pos.triodion_day and wd == 6:
                 # Недели Триоди не уступают празднику: на литургии — Недели и праздника.
-                self._feast_with_sunday(feast, base_title, "праздника", [
+                self._feast_with_sunday(feast, base_title, "праздника", [(
                     "Господский праздник в Неделю Триоди: утреннее Евангелие — праздника; "
-                    "на литургии читаются чтения Недели и праздника."])
+                    "на литургии читаются чтения Недели и праздника.")])
                 return
             if self.pos.triodion_day:
                 notes.append("Праздник в будний день Триоди: возможно чтение дня под зачало — "
@@ -265,9 +265,9 @@ class Reading:
             self._replace(feast["title"], feast["readings"], notes, subtitle=base_title)
         elif feast["kind"] == "great" and wd == 6:
             # Великий праздник в воскресенье: утреня — воскресная, литургия — Недели и праздника.
-            self._feast_with_sunday(feast, base_title, "праздника", [
+            self._feast_with_sunday(feast, base_title, "праздника", [(
                 "Великий праздник в воскресенье: утреннее Евангелие — воскресное; "
-                "на литургии читаются чтения Недели и праздника."], sunday_matins=True)
+                "на литургии читаются чтения Недели и праздника.")], sunday_matins=True)
             if feast.get("note"):
                 self.notes.append(feast["note"])
         elif feast["kind"] in ("theotokos", "great"):
@@ -439,9 +439,9 @@ class Reading:
         self.replaced = True
 
     def _theotokos_sunday(self, feast, base_title):
-        self._feast_with_sunday(feast, base_title, "Богородицы", [
+        self._feast_with_sunday(feast, base_title, "Богородицы", [(
             "Богородичный праздник в воскресенье: утреннее Евангелие — праздника; "
-            "на литургии читаются чтения Недели и праздника."])
+            "на литургии читаются чтения Недели и праздника.")])
 
     def _feast_with_sunday(self, feast, base_title, suffix, head_notes, sunday_matins=False):
         f = self._feast_items(feast["readings"])
@@ -530,7 +530,7 @@ NO_TRANSFER = {"12-24", "12-25", "01-01", "01-02", "01-06"}
 def _base_reading(day: date) -> Reading | None:
     try:
         return Reading(day, resolve(day))
-    except ValueError:            # за пределами 1900–2099 гг.
+    except ValueError:            # за пределами расчёта (см. cycle.FIRST_DAY)
         return None
 
 

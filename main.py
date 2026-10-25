@@ -13,11 +13,16 @@ from datetime import date
 from src.readings import get_reading
 
 
-def main() -> None:
+def main() -> int:
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    day = date.fromisoformat(args[0]) if args else date.today()
-    print(get_reading(day).format(with_text="--text" in sys.argv))
+    try:
+        day = date.fromisoformat(args[0]) if args else date.today()  # noqa: DTZ011
+        print(get_reading(day).format(with_text="--text" in sys.argv))
+    except ValueError as exc:
+        print(f"Ошибка: {exc}", file=sys.stderr)
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

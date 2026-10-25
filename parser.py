@@ -6,11 +6,13 @@
 
 import json
 import time
-import requests
-from bs4 import BeautifulSoup
 from pathlib import Path
 
+import requests
+from bs4 import BeautifulSoup
+
 from src.links import AZBYKA_BOOKS as BOOK_MAP  # проверенные коды книг azbyka.ru
+
 
 def parse_reference_to_azbyka_format(ref_str):
     # Убираем пробелы и заменяем все виды длинных тире на обычный дефис

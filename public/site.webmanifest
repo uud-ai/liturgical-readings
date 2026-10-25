@@ -1,0 +1,15 @@
+{
+  "name": "Литургические чтения",
+  "short_name": "Чтения",
+  "description": "Апостол и Евангелие на каждый день по уставу Русской Православной Церкви",
+  "lang": "ru",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FBFAF7",
+  "theme_color": "#C49638",
+  "icons": [
+    {"src": "/icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "/icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml"}
+  ]
+}

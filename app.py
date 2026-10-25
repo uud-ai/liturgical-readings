@@ -1,10 +1,12 @@
+import os
 import re
 from datetime import date, timedelta
 
-from flask import Flask, render_template_string, request
+from flask import Flask, request, send_from_directory
 from markupsafe import Markup, escape
 
 from src.bible_text import RefError, passage
+from src.cycle import FIRST_DAY, LAST_DAY
 from src.readings import get_reading
 
 app = Flask(__name__)
@@ -73,10 +75,14 @@ PAGE = """<!doctype html>
                "green": "#355F3D", "purple": "#552951", "black": "#221E1C"}[v] %}
 <meta name="theme-color" content="{{ band }}">
 <title>{% if r %}{{ r.title }} — {% endif %}чтения на {{ date_short }}</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cg fill='%23B3261E'%3E%3Crect x='14' y='2' width='4' height='28' rx='1'/%3E%3Crect x='10' y='6' width='12' height='3' rx='1'/%3E%3Crect x='5' y='11' width='22' height='4' rx='1'/%3E%3Crect x='9' y='21' width='14' height='3' rx='1' transform='rotate(-20 16 22.5)'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+{% if not error %}<link rel="prefetch" href="?date={{ next }}"><link rel="prefetch" href="?date={{ prev }}">{% endif %}
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=Old+Standard+TT:ital@0;1&display=swap" rel="stylesheet">
 <style>
   :root {
     --paper: #FBFAF7; --ink: #211D19; --muted: #756D64; --hair: #E7E1D6;
@@ -145,6 +151,7 @@ PAGE = """<!doctype html>
     text-decoration: none; cursor: pointer; min-height: 38px;
     display: inline-flex; align-items: center; justify-content: center; }
   nav a:hover, nav button:hover { background: var(--chip-line); }
+  nav a[aria-current] { background: var(--on); color: var(--v-deep); border-color: var(--on); }
   nav .step { width: 38px; padding: 0; font-size: 17px; }
   nav form { display: flex; gap: 6px; margin-left: auto; }
   nav input { cursor: text; padding: 8px 12px; font-variant-numeric: tabular-nums; }
@@ -236,10 +243,10 @@ PAGE = """<!doctype html>
   <div class="wrap">
     <nav aria-label="Выбор дня">
       <a class="step" href="?date={{ prev }}" aria-label="Предыдущий день">‹</a>
-      <a href="/">Сегодня</a>
+      <a href="/" id="today">Сегодня</a>
       <a class="step" href="?date={{ next }}" aria-label="Следующий день">›</a>
       <form method="get">
-        <input type="date" name="date" value="{{ iso }}" required aria-label="Дата">
+        <input type="date" name="date" value="{{ iso }}" min="1900-03-14" max="2099-12-31" required aria-label="Дата">
         <button type="submit">Открыть</button>
       </form>
     </nav>
@@ -315,6 +322,16 @@ PAGE = """<!doctype html>
   </footer>
 {% endif %}
 </main>
+<script>
+  // «Сегодня» — по часам читателя, без лишнего перехода через «/».
+  (function () {
+    var d = new Date(), p = function (n) { return String(n).padStart(2, "0"); };
+    var iso = d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+    var a = document.getElementById("today");
+    a.href = "?date=" + iso;
+    if (iso === "{{ iso }}") a.setAttribute("aria-current", "date");
+  })();
+</script>
 </body>
 </html>
 """
@@ -332,35 +349,63 @@ location.replace("?date=" + d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + 
 """
 
 
+PAGE_TEMPLATE = app.jinja_env.from_string(PAGE)   # компилируется один раз
+
+# Страница дня зависит только от даты и версии кода: браузер держит её 5 минут,
+# CDN Vercel — сутки (новый деплой сбрасывает кэш CDN).
+CACHE_DAY = "public, max-age=300, s-maxage=86400, stale-while-revalidate=604800"
+CACHE_SHORT = "public, max-age=0, s-maxage=600"
+
+PUBLIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "public")
+PUBLIC_FILES = ("favicon.ico", "favicon.svg", "apple-touch-icon.png", "icon-192.png",
+                "icon-512.png", "site.webmanifest")
+
+
+def page(status: int = 200, cache: str = CACHE_DAY, **ctx):
+    return PAGE_TEMPLATE.render(**ctx), status, {
+        "Content-Type": "text/html; charset=utf-8", "Cache-Control": cache}
+
+
 @app.route("/robots.txt")
 def robots():
-    return "User-agent: *\nAllow: /\n", 200, {"Content-Type": "text/plain; charset=utf-8"}
+    return "User-agent: *\nAllow: /\n", 200, {
+        "Content-Type": "text/plain; charset=utf-8", "Cache-Control": CACHE_DAY}
+
+
+# На Vercel файлы из public/ отдаёт CDN; эти маршруты — для локального запуска.
+for _name in PUBLIC_FILES:
+    app.add_url_rule(f"/{_name}", f"public_{_name}",
+                     lambda n=_name: send_from_directory(PUBLIC_DIR, n, max_age=86400))
 
 
 @app.route("/")
 def index():
     selected = request.args.get("date")
     if not selected:
-        return LOCAL_DATE_REDIRECT.replace("{today}", date.today().isoformat())
+        today = date.today().isoformat()  # noqa: DTZ011 — запасной вариант без JS
+        return LOCAL_DATE_REDIRECT.replace("{today}", today), 200, {
+            "Content-Type": "text/html; charset=utf-8", "Cache-Control": CACHE_SHORT}
 
     try:
         day = date.fromisoformat(selected)
+        if not FIRST_DAY <= day <= LAST_DAY:
+            raise ValueError
     except ValueError:
-        day = date.today()
-        return render_template_string(
-            PAGE, error="Некорректная дата. Используйте формат ГГГГ-ММ-ДД.",
-            iso=day.isoformat(), date_short="ошибка",
-            prev=(day - timedelta(days=1)).isoformat(),
-            next=(day + timedelta(days=1)).isoformat()), 400
+        day = date.today()  # noqa: DTZ011
+        return page(400, CACHE_SHORT,
+                    error="Укажите дату в формате ГГГГ-ММ-ДД — с 14 марта 1900 "
+                          "по 31 декабря 2099 года.",
+                    iso=day.isoformat(), date_short="ошибка",
+                    prev=(day - timedelta(days=1)).isoformat(),
+                    next=(day + timedelta(days=1)).isoformat())
 
-    ctx = dict(iso=day.isoformat(), date_short=day.strftime("%d.%m.%Y"),
-               prev=(day - timedelta(days=1)).isoformat(),
-               next=(day + timedelta(days=1)).isoformat())
+    ctx = {"iso": day.isoformat(), "date_short": day.strftime("%d.%m.%Y"),
+           "prev": (day - timedelta(days=1)).isoformat(),
+           "next": (day + timedelta(days=1)).isoformat()}
     try:
         reading = get_reading(day)
-    except ValueError as exc:  # например, год вне 1900–2099
-        return render_template_string(PAGE, error=str(exc), **ctx), 400
+    except ValueError as exc:  # на случай непредвиденной даты вне расчёта
+        return page(400, CACHE_SHORT, error=str(exc), **ctx)
 
-    return render_template_string(
-        PAGE, r=reading, weekday=WEEKDAYS[day.weekday()].capitalize(),
-        date_long=ru_date(day), old=old_style(day), error=None, **ctx)
+    return page(r=reading, weekday=WEEKDAYS[day.weekday()].capitalize(),
+                date_long=ru_date(day), old=old_style(day), error=None, **ctx)
