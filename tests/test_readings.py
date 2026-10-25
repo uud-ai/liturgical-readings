@@ -223,6 +223,42 @@ class ReadingTest(unittest.TestCase):
             self.assertIn("Апостол мученикам: Рим.8:28-39 (зач. 99)", get_reading(d).format())
         self.assertNotIn("мученикам", get_reading(date(2026, 2, 1)).format())
 
+    def test_saints(self):
+        # Эталон — azbyka.ru/biblia/days (сверено 25.10.2026).
+        t = get_reading(date(2026, 10, 8)).format()   # прп. Сергий (бдение)
+        self.assertIn("Литургия. Евангелие: Лк.6:17-23 (зач. 24)", t)
+        self.assertIn("Рядовые чтения в этот день не читаются.", t)
+        t = get_reading(date(2026, 7, 18)).format()   # обретение мощей прп. Сергия + прмц. Елисавета
+        self.assertIn("Утреня. Евангелие: Мф.11:27-30 (зач. 43)", t)
+        self.assertIn("Рим.12:1-3 (зач. 108)", t)
+        self.assertIn("Евангелие преподобномученице: Мк.5:24-34 (зач. 21)", t)
+        t = get_reading(date(2025, 11, 21)).format()  # Собор Архистратига Михаила
+        self.assertIn("Евр.2:2-10 (зач. 305)", t)
+        t = get_reading(date(2025, 8, 2)).format()    # прор. Илия
+        self.assertIn("Апостол пророку: Иак.5:10-20 (зач. 57)", t)
+        t = get_reading(date(2026, 2, 6)).format()    # блж. Ксения
+        self.assertIn("Мк.14:3-9 (зач. 63)", t)
+        self.assertIn("Апостол блаженной: Гал.5:22-6:2 (зач. 213)", t)
+        t = get_reading(date(2025, 12, 17)).format()  # вмц. Варвара
+        self.assertIn("Евангелие великомученице: Мк.5:24-34 (зач. 21)", t)
+        t = get_reading(date(2025, 12, 7)).format()   # вмц. Екатерина в воскресенье
+        self.assertIn("Лк.13:10-17 (зач. 71)", t)
+        self.assertIn("Апостол великомученице: Еф.6:10-17 (зач. 233)", t)
+        t = get_reading(date(2026, 1, 27)).format()   # равноап. Нина (если служба)
+        self.assertIn("если совершается служба", t)
+        t = get_reading(date(2026, 9, 22)).format()   # прав. Иоаким и Анна
+        self.assertIn("Евангелие богоотцам: Лк.8:16-21 (зач. 36)", t)
+
+    def test_hierarchs_20th_century(self):
+        t = get_reading(date(2026, 10, 28)).format()  # свт. Афанасий (Сахаров)
+        self.assertIn("Кол.3:17-4:1 (зач. 259)", t)
+        self.assertIn("Апостол святителю: Еф.6:10-17 (зач. 233)", t)
+        t = get_reading(date(2026, 6, 11)).format()   # свт. Лука Крымский
+        self.assertIn("Рим.5:10-16", t)
+        self.assertIn("Евангелие святителю: Мф.5:14-19 (зач. 11)", t)
+        t = get_reading(date(2025, 12, 25)).format()  # свт. Спиридон
+        self.assertIn("Апостол святителю: Евр.13:17-21 (зач. 335)", t)
+
     def test_exaltation_days(self):
         t = get_reading(date(2026, 9, 20)).format()   # Неделя пред Воздвижением
         self.assertIn("Гал.6:11-18 (зач. 215)", t)

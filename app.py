@@ -146,7 +146,7 @@ PAGE = """<!doctype html>
     </div>
 
     {% if r.notes %}
-    <ul class="notes">{% for n in r.notes %}<li>{{ n }}</li>{% endfor %}</ul>
+    <ul class="notes">{% for n in r.notes|unique %}<li>{{ n }}</li>{% endfor %}</ul>
     {% endif %}
 
     <footer>

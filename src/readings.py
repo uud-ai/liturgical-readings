@@ -349,6 +349,11 @@ class Reading:
             self.notes.append(f"Память: {name}. В этот день служба совершается по особому "
                               f"уставу — смотрите богослужебные указания.")
             return
+        extra = []
+        if c.get("conditional"):
+            extra.append(f"{name}: чтения памяти читаются, если совершается служба.")
+        if c.get("note"):
+            extra.append(c["note"])
         f = self._feast_items(c["readings"])
         eve = [i for i in f if i.service.startswith("Вечерня (накануне)")]
         matins = [i for i in f if i.service == "Утреня"]
@@ -362,7 +367,7 @@ class Reading:
         base_title = "" if self.unresolved else (self.pos.title or self.title)
         in_pascha = a is not None and a.period == "pascha_period"
         if rank == "vigil" and wd <= 5 and not in_pascha:
-            self._replace(name, c["readings"], ["Рядовые чтения в этот день не читаются."],
+            self._replace(name, c["readings"], ["Рядовые чтения в этот день не читаются."] + extra,
                           subtitle=base_title)
             self.feast_kind = "vigil"
             return
@@ -378,6 +383,8 @@ class Reading:
                                service="Утреня")]
         elif bright:
             matins = []
+        elif not matins:
+            matins = base_matins            # у этой памяти нет своего утреннего Евангелия
         if rank == "sunday":
             eve = []
         self.items = eve + matins + base_rest + lit
@@ -390,6 +397,7 @@ class Reading:
         self.feast_kind = self.feast_kind or rank
         self.notes.append("На литургии читаются чтения " + ("Недели" if wd == 6 else "дня")
                           + " и памяти.")
+        self.notes += extra
 
     @staticmethod
     def _feast_items(readings: list[dict]) -> list[Item]:
@@ -478,7 +486,7 @@ class Reading:
         # В тексте порядок привычный: Апостол, Евангелие, затем утреннее.
         order = {"apostle": 0, "gospel": 1, "matins": 2, "vespers": 3, "triodion": 4, "feast": 4}
         lines += [i.text() for i in sorted(self.items, key=lambda i: order[i.kind])]
-        lines += self.notes
+        lines += list(dict.fromkeys(self.notes))     # без повторов
         return "\n".join(lines)
 
 
