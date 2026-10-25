@@ -238,10 +238,19 @@ class Reading:
                 notes.append("Праздник в будний день Триоди: возможно чтение дня под зачало — "
                              "сверьте с богослужебными указаниями.")
             self._replace(feast["title"], feast["readings"], notes, subtitle=base_title)
+        elif feast["kind"] == "great" and wd == 6:
+            # Великий праздник в воскресенье: утреня — воскресная, литургия — Недели и праздника.
+            self._feast_with_sunday(feast, base_title, "праздника", [
+                "Великий праздник в воскресенье: утреннее Евангелие — воскресное; "
+                "на литургии читаются чтения Недели и праздника."], sunday_matins=True)
+            if feast.get("note"):
+                self.notes.append(feast["note"])
         elif feast["kind"] in ("theotokos", "great"):
             if wd < 6:
                 self._replace(feast["title"], feast["readings"],
-                              ["Рядовые чтения в этот день не читаются."], subtitle=base_title)
+                              ["Рядовые чтения в этот день не читаются."]
+                              + ([feast["note"]] if feast.get("note") else []),
+                              subtitle=base_title)
             else:
                 self._theotokos_sunday(feast, base_title)
         else:
@@ -304,8 +313,15 @@ class Reading:
             "Богородичный праздник в воскресенье: утреннее Евангелие — праздника; "
             "на литургии читаются чтения Недели и праздника."])
 
-    def _feast_with_sunday(self, feast, base_title, suffix, head_notes):
+    def _feast_with_sunday(self, feast, base_title, suffix, head_notes, sunday_matins=False):
         f = self._feast_items(feast["readings"])
+        if sunday_matins:
+            f = [i for i in f if i.service != "Утреня"]
+            if self.pos.sunday_after_pentecost:
+                n, ref, z = eothinon(self.pos.sunday_after_pentecost)
+                pos = sum(1 for i in f if i.service.startswith("Вечерня (накануне)"))
+                f.insert(pos, Item("feast", f"Евангелие {n}-е воскресное", ref, str(z),
+                                   service="Утреня"))
         sunday_lit = [Item("feast", f"{i.label} Недели", i.ref, i.zachalo, service="Литургия",
                            parts=i.parts)
                       for i in self.items if i.service == "Литургия" and (i.ref or i.parts)]

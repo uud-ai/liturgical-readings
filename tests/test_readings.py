@@ -177,6 +177,21 @@ class ReadingTest(unittest.TestCase):
         self.assertIn("Еф.4:7-13 (зач. 224 от полу)", t)
         self.assertIn("Евангелие рядовое (под зачало): Лк.19:1-10 (зач. 94)", t)
 
+    def test_great_feasts(self):
+        # Эталон — azbyka.ru/biblia/days (сверено 25.10.2026).
+        t = get_reading(date(2026, 7, 7)).format()    # Рождество Предтечи, будни
+        self.assertIn("Литургия. Евангелие: Лк.1:1-25,57-68,76,80 (зач. 1)", t)
+        self.assertIn("Рядовые чтения в этот день не читаются.", t)
+        t = get_reading(date(2026, 7, 12)).format()   # Петра и Павла в воскресенье
+        self.assertIn("Евангелие 6-е воскресное: Лк.24:36-53 (зач. 114)", t)
+        self.assertIn("Апостол Недели: Рим.12:6-14 (зач. 110)", t)
+        self.assertIn("Евангелие праздника: Мф.16:13-19 (зач. 67)", t)
+        self.assertNotIn("Ин.21:15-25", t)
+        t = get_reading(date(2026, 9, 11)).format()   # Усекновение
+        self.assertIn("Мк.6:14-30 (зач. 24)", t)
+        t = get_reading(date(2026, 10, 14)).format()  # Покров
+        self.assertIn("Евр.9:1-7 (зач. 320)", t)
+
     def test_bible_links(self):
         # Коды книг — как на страницах azbyka.ru/biblia.
         self.assertEqual(bible_url("Иак.2:14-26"), "https://azbyka.ru/biblia/?Jac.2:14-26")
