@@ -106,7 +106,8 @@ data/
   triodion.json         Триодь постная: ключ — число дней до Пасхи
   feasts.json           праздники, навечерия, особые дни, памяти (дата ст. ст.)
   bible/synodal.json    Синодальный перевод (источник и лицензия — bible/README.md)
-public/                 значки сайта и манифест (на Vercel отдаются CDN)
+public/                 значки сайта (в т. ч. icon-maskable-* для Android) и манифест;
+                        на Vercel их отдаёт CDN
 tests/                  проверки по контрольным датам и полнота текста
 tools/convert_ponomar_bible.py   пересборка synodal.json из исходников Ponomar
 ```

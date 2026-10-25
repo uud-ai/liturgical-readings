@@ -352,7 +352,8 @@ CACHE_SHORT = "public, max-age=0, s-maxage=600"
 
 PUBLIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "public")
 PUBLIC_FILES = ("favicon.ico", "favicon.svg", "apple-touch-icon.png", "icon-192.png",
-                "icon-512.png", "site.webmanifest")
+                "icon-512.png", "icon-maskable-192.png", "icon-maskable-512.png",
+                "icon-maskable.svg", "site.webmanifest")
 
 
 def page(status: int = 200, cache: str = CACHE_DAY, **ctx):
