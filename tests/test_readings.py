@@ -382,6 +382,17 @@ class ReadingTest(unittest.TestCase):
         # Малая память в воскресенье не читается (Косма и Дамиан, 14.11.2027 — воскресенье).
         self.assertNotIn("бессребреникам", get_reading(date(2027, 11, 14)).format())
 
+    def test_theotokos_icons(self):
+        # Иконы Божией Матери (azbyka.ru/days, дата сверки — в data/feasts.json).
+        for day in (date(2025, 2, 25), date(2024, 11, 22), date(2025, 7, 25), date(2025, 9, 1)):
+            t = get_reading(day).format()
+            self.assertIn("Евангелие Богородицы: Лк.10:38-42,11:27-28", t, day)
+            self.assertIn("Лк.1:39-49,56", t, day)
+        self.assertIn("Апостол Богородицы: Евр.9:1-7", get_reading(date(2025, 8, 5)).format())
+        t = get_reading(date(2025, 8, 29)).format()       # 16/29 августа — Нерукотворный Образ
+        self.assertIn("Евангелие Образу: Лк.9:51-56,10:22-24", t)
+        self.assertNotIn("Феодоровской", t)
+
     def test_vestments(self):
         # Цвет облачения — по таблице azbyka.ru (общий обычай Русской Церкви).
         cases = {
