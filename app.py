@@ -75,6 +75,14 @@ PAGE = """<!doctype html>
   .notes li { background: var(--note); border-radius: 10px; padding: 10px 14px;
               margin-top: 8px; font-size: 15px; color: var(--muted); }
   .unresolved { padding: 18px; color: var(--muted); }
+  .service { padding: 10px 18px 8px; font: italic 15px/1.3 "PT Serif", Georgia, serif;
+             color: var(--muted); background: var(--note); border-top: 1px solid var(--line); }
+  .service:first-child { border-top: 0; }
+  .service + .reading { border-top: 0; }
+  .part { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+          color: inherit; text-decoration: none; margin-top: 4px; }
+  .part .ref { font-size: 19px; }
+  .part:hover .ref { color: var(--accent); }
   footer { margin-top: 28px; font-size: 14px; color: var(--muted); }
   footer a { color: var(--accent); }
   @media (max-width: 480px) {
@@ -105,20 +113,33 @@ PAGE = """<!doctype html>
     {% if r.note %}<p class="subtitle">{{ r.note }}</p>{% else %}<div style="height:12px"></div>{% endif %}
 
     <div class="card">
-      {% for i in r.items %}
-        {% if i.url %}
-        <a class="reading" href="{{ i.url }}" target="_blank" rel="noopener">
-          <div class="label">{{ i.label }}</div>
-          <div class="ref">{{ i.ref }} <span class="go">↗</span></div>
-          {% if i.zachalo %}<div class="zach">зачало {{ i.zachalo }}</div>{% endif %}
-        </a>
-        {% else %}
-        <div class="reading">
-          <div class="label">{{ i.label }}</div>
-          {% if i.ref %}<div class="ref">{{ i.ref }}</div>
-          {% else %}<div class="missing">{{ i.missing }}</div>{% endif %}
-        </div>
-        {% endif %}
+      {% for service, items in r.groups %}
+        {% if service %}<div class="service">{{ service }}</div>{% endif %}
+        {% for i in items %}
+          {% if i.parts %}
+          <div class="reading">
+            <div class="label">{{ i.label }}</div>
+            {% for p in i.parts %}
+            <a class="part" href="{{ p.url }}" target="_blank" rel="noopener">
+              <span class="ref">{{ p.ref }} <span class="go">↗</span></span>
+              {% if p.zachalo %}<span class="zach">зач. {{ p.zachalo }}</span>{% endif %}
+            </a>
+            {% endfor %}
+          </div>
+          {% elif i.url %}
+          <a class="reading" href="{{ i.url }}" target="_blank" rel="noopener">
+            <div class="label">{{ i.label }}</div>
+            <div class="ref">{{ i.ref }} <span class="go">↗</span></div>
+            {% if i.zachalo %}<div class="zach">зачало {{ i.zachalo }}</div>{% endif %}
+          </a>
+          {% else %}
+          <div class="reading">
+            <div class="label">{{ i.label }}</div>
+            {% if i.ref %}<div class="ref">{{ i.ref }}</div>
+            {% else %}<div class="missing">{{ i.missing }}</div>{% endif %}
+          </div>
+          {% endif %}
+        {% endfor %}
       {% else %}
         <div class="unresolved">Рядовые чтения на этот день приложение пока не выдаёт. <a href="{{ r.azbyka_day_url }}" target="_blank" rel="noopener" style="color:var(--accent)">Чтения дня на «Азбуке веры» ↗</a></div>
       {% endfor %}
@@ -129,7 +150,7 @@ PAGE = """<!doctype html>
     {% endif %}
 
     <footer>
-      Показаны рядовые чтения (без праздничных и святых).
+      Показаны чтения подвижного круга — рядовые и Триоди постной (без праздничных и святых по Минее).
       Все чтения дня — <a href="{{ r.azbyka_day_url }}" target="_blank" rel="noopener">на «Азбуке веры»</a>.
       Ссылки открывают Синодальный перевод.
     </footer>
