@@ -283,7 +283,9 @@
         "gospel": "Лк.24:36-53",
         "gospel_matins": "Мк.16:9-20",
         "note": "Вознесение Господне",
-        "gospel_zachalo": 114
+        "gospel_zachalo": 114,
+        "apostle_zachalo": 1,
+        "gospel_matins_zachalo": 71
       },
       "fri": {
         "apostle": "Деян.19:1-8",

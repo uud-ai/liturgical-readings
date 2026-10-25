@@ -133,7 +133,7 @@ class Reading:
             # Чтения другой Недели (обратный счёт, Крещенская отступка):
             # название — по счёту от Пятидесятницы, тема — из чтений.
             return title, m.group(2)
-        if note.startswith(("Неделя", "Светлое", "День Святой")):
+        if note.startswith(("Неделя", "Светлое", "День Святой", "Вознесение", "Преполовение")):
             return note, ""
         return title, note
 
@@ -215,9 +215,19 @@ class Reading:
                 friday = self.day - timedelta(days=wd - 4)
                 items = list(eve["saturday" if wd == 5 else "sunday"]) + eve["weekend_vespers"]
                 notes = [f"Царские часы перенесены на пятницу, {friday.strftime('%d.%m')}."]
-                if wd == 5:
+                ordinary = list(self.ordinary_lit) if wd == 5 and eve.get("saturday_ordinary") else []
+                if wd == 5 and eve.get("saturday_note"):
                     notes.append(eve["saturday_note"])
                 self._replace(eve["title"], items, notes, keep_eothinon=(wd == 6))
+                if ordinary:
+                    # Навечерие Богоявления в субботу: рядовые субботы — под зачало
+                    # (azbyka.ru 18.01.2025).
+                    pos = len(eve["saturday"])
+                    self.items[pos:pos] = [
+                        Item("feast", "Апостол рядовой (под зачало)" if i.kind == "apostle"
+                             else "Евангелие рядовое (под зачало)", i.ref, i.zachalo,
+                             service=eve["saturday"][0]["service"]) for i in ordinary]
+                    self.replaced = False
             return
 
         feast = data["feasts"].get(key)
@@ -259,7 +269,17 @@ class Reading:
                 self.notes.append(feast["note"])
         elif feast["kind"] in ("theotokos", "great"):
             if wd < 6:
-                self._replace(feast["title"], feast["readings"],
+                readings = feast["readings"]
+                if key == "01-01" and wd in (0, 1):
+                    # Обрезание в понедельник или вторник: Недели пред Богоявлением
+                    # в этом году нет, её чтения — в день Обрезания (azbyka.ru 14.01.2025).
+                    sb = next(sp for sp in data["special_days"]
+                              if sp["name"] == "Неделя пред Богоявлением")
+                    k = sum(1 for r in readings if r["service"] == "Утреня")
+                    sunday = [dict(r, label=f"{r['label']} Недели пред Богоявлением")
+                              for r in sb["readings"]]
+                    readings = readings[:k] + sunday + readings[k:]
+                self._replace(feast["title"], readings,
                               ["Рядовые чтения в этот день не читаются."]
                               + ([feast["note"]] if feast.get("note") else []),
                               subtitle=base_title)

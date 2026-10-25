@@ -393,6 +393,23 @@ class ReadingTest(unittest.TestCase):
         self.assertIn("Евангелие Образу: Лк.9:51-56,10:22-24", t)
         self.assertNotIn("Феодоровской", t)
 
+    def test_christmas_theophany_edges(self):
+        # Сверено с azbyka.ru/days (26.10.2026).
+        t = get_reading(date(2024, 1, 6)).format()        # навечерие Рождества в субботу
+        self.assertIn("Гал.3:15-22", t)
+        self.assertIn("Мф.13:31-36", t)
+        self.assertNotIn("Гал.3:8-12", t)
+        t = get_reading(date(2025, 1, 18)).format()       # навечерие Богоявления в субботу
+        self.assertIn("Апостол рядовой (под зачало): Еф.5:1-8", t)
+        self.assertIn("Евангелие рядовое (под зачало): Лк.18:2-8", t)
+        t = get_reading(date(2025, 1, 14)).format()       # Обрезание во вторник
+        self.assertIn("Апостол Недели пред Богоявлением: 2Тим.4:5-8", t)
+        self.assertNotIn("Недели пред Богоявлением", get_reading(date(2026, 1, 14)).format())
+        self.assertTrue(get_reading(date(2025, 5, 29)).format().splitlines()[1]
+                        .startswith("Вознесение Господне"))
+        self.assertIn("Апостол блаженной: Гал.3:23-29",          # обретение мощей блж. Матроны
+                      get_reading(date(2025, 3, 8)).format())
+
     def test_vestments(self):
         # Цвет облачения — по таблице azbyka.ru (общий обычай Русской Церкви).
         cases = {
