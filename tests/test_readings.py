@@ -410,6 +410,26 @@ class ReadingTest(unittest.TestCase):
         self.assertIn("Апостол блаженной: Гал.3:23-29",          # обретение мощей блж. Матроны
                       get_reading(date(2025, 3, 8)).format())
 
+    def test_menaion(self):
+        # Минея из Ponomar, сверено с azbyka.ru/days (26.10.2026).
+        cases = {
+            date(2026, 2, 10): ("(прп. Ефрема Сирина): Гал.5:22-6:2",),
+            date(2025, 11, 15): ("Еф.6:10-17", "Мф.10:16-22"),          # мчч. Акиндин и др.
+            date(2025, 6, 23): ("Евр.13:17-21", "Ин.10:9-16"),          # свт. Иоанн Тобольский
+            date(2025, 1, 30): ("Утреня. Евангелие: Мф.11:27-30",      # прп. Антоний Великий
+                                "Лк.6:17-23"),
+            date(2025, 11, 29): ("1Кор.4:9-16", "Мф.9:9-13"),           # ап. Матфей
+            date(2025, 9, 9): ("Мф.4:25-5:12",),                        # прп. Пимен
+        }
+        for day, expected in cases.items():
+            t = get_reading(day).format()
+            for e in expected:
+                self.assertIn(e, t, day)
+        # Местночтимые — с пометкой; при бдении и полиелее дня малые памяти не читаются.
+        self.assertIn("если совершается служба", get_reading(date(2026, 8, 21)).format())
+        self.assertNotIn("Кирика", get_reading(date(2025, 7, 28)).format())
+        self.assertNotIn("Митрофана", get_reading(date(2025, 12, 6)).format())
+
     def test_vestments(self):
         # Цвет облачения — по таблице azbyka.ru (общий обычай Русской Церкви).
         cases = {

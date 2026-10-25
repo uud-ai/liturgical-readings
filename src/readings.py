@@ -30,6 +30,12 @@ def load_triodion() -> dict:
         return json.load(f)
 
 
+@lru_cache(maxsize=1)
+def load_menaion() -> dict:
+    with open(DATA_DIR / "menaion.json", encoding="utf-8") as f:
+        return json.load(f)
+
+
 def lookup(slot: Slot | None) -> dict | None:
     if slot is None:
         return None
@@ -240,6 +246,7 @@ class Reading:
             for c in data.get("commemorations", []):
                 if self._commemoration_matches(c, key, wd):
                     self._apply_commemoration(c)
+            self._apply_menaion(key, wd)
             return
         self.feast_kind = feast["kind"]
         base_title = "" if self.unresolved else (self.pos.title or self.title)
@@ -336,6 +343,38 @@ class Reading:
 
     # --- памяти святых и икон, памятные воскресенья -----------------------
 
+    def _apply_menaion(self, key: str, wd: int) -> None:
+        """Чтения святым по Минее (data/menaion.json, из проекта Ponomar)."""
+        n = self.pos.triodion_day
+        a = self.pos.apostle
+        if n and (n <= 6 or (9 <= n <= 48 and wd <= 4)):
+            return          # Страстная седмица; будни поста — литургии нет
+        if a is not None and a.period == "pascha_period" and a.week in ("pascha", "2"):
+            return          # Светлая седмица
+        if a in (Slot("pascha_period", "7", "thu"), Slot("pascha_period", "pentecost", "sun")):
+            return
+        if self.replaced:
+            return          # день занят бдением: чтения малых памятей не читаются
+        if any(c["rank"] in ("vigil", "polyeleos") and not c.get("conditional")
+               for c in self.memories):
+            return          # полиелейная память дня (azbyka.ru 06.12.2024: только Александр Невский)
+        curated = bool(self.memories)
+        present = {i.ref for i in self.items if i.ref}
+        for e in load_menaion().get(key, []):
+            if curated and e["rank"] != "lesser":
+                continue    # полиелей по Минее — уступает проверенной памяти дня
+            readings = [r for r in e["readings"] if not (wd == 6 and r.get("weekday_only"))]
+            lit = {r["ref"] for r in readings if r["service"] == "Литургия"}
+            if not lit or lit <= present:
+                continue
+            c = {"name": e["name"], "suffix": f"({e['short']})", "rank": e["rank"],
+                 "rule": {"type": "menaion"}, "readings": readings}
+            for k in ("conditional", "vestment"):
+                if k in e:
+                    c[k] = e[k]
+            self._apply_commemoration(c)
+            present |= lit
+
     def _commemoration_matches(self, c: dict, key: str, wd: int) -> bool:
         rule = c["rule"]
         if rule["type"] == "fixed":
@@ -412,8 +451,10 @@ class Reading:
                                service="Утреня")]
         elif bright:
             matins = []
-        elif not matins:
-            matins = base_matins            # у этой памяти нет своего утреннего Евангелия
+        elif not matins or len(self.memories) > 1 and base_matins:
+            # у этой памяти нет своего утреннего Евангелия, или утреня уже отдана
+            # первой (старшей) памяти дня (azbyka.ru 25.02.2025)
+            matins = base_matins
         if rank == "sunday":
             eve = []
         self.items = eve + matins + base_rest + lit
