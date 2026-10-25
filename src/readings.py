@@ -103,6 +103,10 @@ class Reading:
         else:
             self.title, self.note = self._title_and_note()
             self.items = [] if pos.unresolved or pos.ordinary_omitted else self._items()
+        # Рядовые литургийные чтения дня до наложения праздников (для переноса).
+        self.ordinary_lit = [i for i in self.items if i.service == "Литургия" and i.ref
+                             and i.kind in ("apostle", "gospel")]
+        self.replaced = False      # рядовые вытеснены праздником, навечерием, бдением
         self.feast_kind = ""
         self._apply_fixed_feasts()
 
@@ -149,7 +153,7 @@ class Reading:
             ref = entry.get(kind)
             if slot is None:
                 items.append(Item(kind, label, service="Литургия",
-                                  missing="рядовое — из Матфеевых седмиц, смотрите богослужебные указания."))
+                                  missing="рядовое — по особому правилу, смотрите богослужебные указания."))
             elif ref:
                 items.append(Item(kind, label, ref, str(entry.get(f"{kind}_zachalo") or ""),
                                   service="Литургия"))
@@ -425,6 +429,7 @@ class Reading:
         self.items = eothinon_items + self._feast_items(readings)
         self.notes = notes
         self.unresolved = False
+        self.replaced = True
 
     def _theotokos_sunday(self, feast, base_title):
         self._feast_with_sunday(feast, base_title, "Богородицы", [
@@ -506,5 +511,88 @@ class Reading:
         return "\n".join(lines)
 
 
+# --- перенос рядовых чтений будня, занятого праздником -------------------
+
+WEEKDAY_ACC = ["понедельник", "вторник", "среду", "четверг", "пятницу", "субботу"]
+# Дни, рядовые чтения которых не переносятся (azbyka.ru: 05.01, 13.01, 20.01.2026;
+# 13.01.2016; 16.01.2020): навечерие Рождества, Рождество, Обрезание, прп. Серафим
+# Саровский (2 января), Богоявление (ст. ст.).
+NO_TRANSFER = {"12-24", "12-25", "01-01", "01-02", "01-06"}
+
+
+def _base_reading(day: date) -> Reading | None:
+    try:
+        return Reading(day, resolve(day))
+    except ValueError:            # за пределами 1900–2099 гг.
+        return None
+
+
+def _in_ordinary_period(r: Reading) -> bool:
+    a = r.pos.apostle
+    return (r.day.weekday() < 6 and not r.pos.triodion_day and a is not None
+            and a.period == "pentecost_period")
+
+
+def _free(r: Reading | None) -> bool:
+    """Будний день со своими рядовыми чтениями — может принять перенесённые."""
+    return (r is not None and _in_ordinary_period(r) and not r.replaced
+            and bool(r.ordinary_lit))
+
+
+def _displaced(r: Reading | None) -> bool:
+    """Будний день, рядовые чтения которого вытеснены праздником."""
+    if r is None or not (_in_ordinary_period(r) and r.replaced and r.ordinary_lit):
+        return False
+    old = r.day - timedelta(days=13)
+    return f"{old.month:02d}-{old.day:02d}" not in NO_TRANSFER
+
+
+def _apply_transfers(r: Reading) -> None:
+    """Рядовые чтения будня, занятого праздником (навечерием, бдением, царскими
+    часами), читаются под зачало накануне, а если накануне воскресенье или тоже
+    праздник — на следующий день («за пятницу», «за понедельник» на azbyka.ru;
+    сверено: 22.09, 07.10, 10.10, 13.10.2026; 03.12.2025; 04.01.2018; 16.01.2020)."""
+    if not _free(r):
+        return
+    before, after = [], []
+    prev, nxt = r.day - timedelta(days=1), r.day + timedelta(days=1)
+    if prev.weekday() < 6:
+        p = _base_reading(prev)
+        if _displaced(p) and (prev.weekday() == 0 or not _free(_base_reading(prev - timedelta(days=1)))):
+            before = [p]
+    if nxt.weekday() < 6:
+        n = _base_reading(nxt)
+        if _displaced(n):
+            after = [n]
+    if not before and not after:
+        return
+    own = [i for i in r.items if i.service == "Литургия" and i.ref
+           and any(i.ref == o.ref for o in r.ordinary_lit)]
+    kind = own[0].kind if own else "feast"
+
+    def moved(src: Reading) -> list[Item]:
+        wd = WEEKDAY_ACC[src.day.weekday()]
+        return [Item(i.kind if kind != "feast" else "feast",
+                     f"{'Апостол' if i.kind == 'apostle' else 'Евангелие'} за {wd} (под зачало)",
+                     i.ref, i.zachalo, service="Литургия") for i in src.ordinary_lit]
+
+    head, tail = [], []
+    for src in before:
+        head += moved(src)
+    for src in after:
+        tail += moved(src)
+    if own:
+        first, last = r.items.index(own[0]), r.items.index(own[-1])
+        r.items = r.items[:first] + head + r.items[first:last + 1] + tail + r.items[last + 1:]
+    else:
+        r.items += head + tail
+    for src in before + after:
+        r.notes.append(f"Рядовые чтения на {WEEKDAY_ACC[src.day.weekday()]} "
+                       f"{src.day.strftime('%d.%m')} ({src.title}) читаются в этот день "
+                       f"под зачало.")
+
+
 def get_reading(day: date) -> Reading:
-    return Reading(day, resolve(day))
+    r = Reading(day, resolve(day))
+    _apply_transfers(r)
+    return r
