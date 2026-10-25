@@ -99,7 +99,7 @@ def _vestment_key(reading) -> str:
 
     if wd < 6:
         for c in reading.memories:
-            if c.get("rank") in ("vigil", "polyeleos"):
+            if c.get("rank") in ("vigil", "polyeleos") and not c.get("conditional"):
                 return c.get("vestment", "gold")
 
     if t and t <= 48:

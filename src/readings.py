@@ -356,6 +356,8 @@ class Reading:
             self.notes.append(f"Память: {name}. В этот день служба совершается по особому "
                               f"уставу — смотрите богослужебные указания.")
             return
+        if rank == "lesser" and wd == 6:
+            return                  # в воскресенье чтения малой памяти не читаются
         extra = []
         if c.get("conditional"):
             extra.append(f"{name}: чтения памяти читаются, если совершается служба.")

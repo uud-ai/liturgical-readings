@@ -391,7 +391,8 @@
       "sat": {
         "apostle": "Рим.1:7-12",
         "gospel": "Мф.5:42-48",
-        "gospel_zachalo": 15
+        "gospel_zachalo": 15,
+        "apostle_zachalo": "79 от полу"
       },
       "sun": {
         "apostle": "Евр.11:33-12:2",
