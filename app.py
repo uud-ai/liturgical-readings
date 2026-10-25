@@ -23,7 +23,7 @@ def passage_html(ref: str):
     for k, v in enumerate(verses):
         num = f"{v.chapter}:{v.verse}" if v.chapter != prev else str(v.verse)
         text = str(escape(v.text)).replace("&lt;i&gt;", "<i>").replace("&lt;/i&gt;", "</i>")
-        text = text.replace(" -- ", "\u00a0— ").replace("--", "—")
+        text = text.replace(" -- ", "\u00a0— ").replace("--", "—").replace(" - ", "\u00a0— ")
         sup = f"<sup>{num}</sup>"
         if k == 0:
             m = re.match(r"((?:<i>)?)([^\W\d_])", text)
